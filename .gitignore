@@ -1,0 +1,3 @@
+.env
+# trailing slash to indicate it's a directory
+venv/ 
