@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-# Set the API key from the environment variable
+# Get OpenAI API key from environment variables
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Debug: Print the API key to verify it's loaded correctly
@@ -49,7 +49,7 @@ def main():
     args = parser.parse_args()
 
     try:
-        while True:  # Loop to handle user inputs continuously
+        while True:  # Loop to run indefinitely(until user exits)
             try:
                 # Prompt the user for a YouTube URL
                 print('\nPaste in the YouTube URL (or type "exit" to quit):')
@@ -87,7 +87,7 @@ def main():
             except Exception as e:
                 print("An error occurred:", e)
 
-    except KeyboardInterrupt:
+    except KeyboardInterrupt: # if user presses Ctrl+C
         print("Exiting...")
 
 if __name__ == "__main__":
