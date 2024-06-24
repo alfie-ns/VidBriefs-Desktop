@@ -1,0 +1,1 @@
+# essentially this script with do the same thing as youtube summrisation but ted talks
