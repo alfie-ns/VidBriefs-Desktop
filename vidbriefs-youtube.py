@@ -1,5 +1,8 @@
-import os, re
-import openai
+#!/usr/bin/env python
+
+import os
+import re
+from openai import OpenAI
 import argparse
 from youtube_transcript_api import YouTubeTranscriptApi
 from urllib.parse import urlparse, parse_qs
@@ -9,10 +12,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Get OpenAI API key from environment variables
-openai.api_key = os.getenv("OPENAI_API_KEY")
+api_key = os.getenv("OPENAI_API_KEY")
 
-# Debug: Print the API key to verify it's loaded correctly
-print("API Key:", openai.api_key)
+# Initialize OpenAI client
+client = OpenAI(api_key=api_key)
 
 def bold(text):
     return "\033[1m" + text + "\033[0m"
@@ -23,72 +26,71 @@ def blue(text):
 def red(text):
     return "\033[31m" + text + "\033[0m"
 
-def bold(text):
-    return re.sub(r'\*\*(.*?)\*\*', r'\033[1m\1\033[0m', text)
+def green(text):
+    return "\033[32m" + text + "\033[0m"
 
-def summarise_transcript(user_prompt ,transcript, personality):
-    # Generate the initial prompt with the transcript
-    initial_prompt = (
-        f"You are GPT-4o, a powerful model with a {personality} personality. "
-        f"Here is the transcript of a YouTube video: \"{transcript}\". Traverse the transcript then answer this question:{user_prompt}"
-    )
-    messages = [{"role": "system", "content": initial_prompt}]
+def chat_with_gpt(messages, personality):
+    messages.append({"role": "system", "content": f"You are a helpful assistant with a {personality} personality."})
     
-    # Make the API call with the initial message
-    response = openai.ChatCompletion.create(
-        model="gpt-4o",
-        messages=messages,
-    )
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=messages
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Error communicating with GPT-4: {str(e)}"
+
+def get_transcript(url):
+    video_id = url.split('/')[-1] if 'youtu.be' in url else parse_qs(urlparse(url).query).get('v', [None])[0]
     
-    # Extract and return the assistant's response
-    return response['choices'][0]['message']['content']
+    if not video_id:
+        raise ValueError("No video ID found in URL")
+    
+    transcript = YouTubeTranscriptApi.get_transcript(video_id)
+    sentences = [entry['text'] for entry in transcript]
+    return " ".join(sentences)
 
 def main():
-    parser = argparse.ArgumentParser(description="Simple command line YouTube helper with GPT-4o and the respective video transcript.")
+    parser = argparse.ArgumentParser(description="Interactive YouTube video summarizer and chatbot.")
     parser.add_argument("--personality", type=str, help="A brief summary of the chatbot's personality", default="friendly and helpful")
     args = parser.parse_args()
 
+    messages = []
+    current_transcript = ""
+
+    print(bold(blue("Welcome to the YouTube Video Summarizer and Chatbot!")))
+    print("Paste a YouTube URL to start chatting with GPT-4o about videos of your interest.")
+    print("Type 'exit' to quit the program.")
+
     try:
-        while True:  # Loop to run indefinitely(until user exits)
-            try:
-                # Prompt the user for a YouTube URL
-                print('\nPaste in the YouTube URL (or type "exit" to quit):')
-                url = input().strip()
+        while True:
+            user_input = input(bold("\nEnter a YouTube URL or your message: ")).strip()
 
-                if url.lower() == "exit":
-                    print("Exiting...")
-                    break
+            if user_input.lower() == 'exit':
+                print("Exiting...")
+                break
 
-                # Extract the video ID from the URL
-                video_id = url.split('/')[-1] if 'youtu.be' in url else parse_qs(urlparse(url).query).get('v', [None])[0]
+            if 'youtube.com' in user_input or 'youtu.be' in user_input:
+                try:
+                    current_transcript = get_transcript(user_input)
+                    messages = [{"role": "system", "content": f"You are a helpful assistant with a {args.personality} personality. Here's a transcript of a YouTube video: {current_transcript}"}]
+                    print(bold(green("New video transcript loaded. You can now ask questions about this video.")))
+                except Exception as e:
+                    print(red(f"Error loading video transcript: {str(e)}"))
+                    continue
+            else:
+                if not current_transcript:
+                    print(red("Please load a YouTube video first by pasting its URL."))
+                    continue
+                
+                messages.append({"role": "user", "content": user_input})
+                response = chat_with_gpt(messages, args.personality)
+                print(bold(red("\nAssistant: ")), response)
+                messages.append({"role": "assistant", "content": response})
 
-                # Ensure that a video ID was found
-                if not video_id:
-                    raise ValueError("No video ID found in URL")
-
-                # Get the transcript for the video
-                transcript = YouTubeTranscriptApi.get_transcript(video_id)
-
-                # Extract the sentences from the transcript
-                sentences = [entry['text'] for entry in transcript]
-
-                # Join the sentences into a single string (transcript)
-                entire_transcript = " ".join(sentences)
-
-                # get user_prompt
-                user_prompt = input('What would you like to know about the video?: ')
-
-                # Summarise the transcript
-                summary = summarise_transcript(user_prompt, entire_transcript, args.personality)
-
-                # Print the summary
-                print(bold(red("\nSummary: ")), bold(summary))
-
-            except Exception as e:
-                print("An error occurred:", e)
-
-    except KeyboardInterrupt: # if user presses Ctrl+C
-        print("Exiting...")
+    except KeyboardInterrupt:
+        print("\nExiting...")
 
 if __name__ == "__main__":
     main()
