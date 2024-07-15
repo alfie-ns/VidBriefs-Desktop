@@ -83,7 +83,7 @@ def main():
     print(bold(blue("\nWelcome to the YouTube Video Summarizer and Chatbot!")))
     print("Before we begin, let's personalize your experience\n")
     choice = input(bold(textwrap.dedent("""
-    How would you like to personalize the assistant? 
+    How would you like to personalise the assistant? 
     (Choose one or combine, e.g., 'concise and technical')
 
     Options:
