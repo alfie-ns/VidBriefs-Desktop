@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 import sys, os, re
 import textwrap
 import datetime
+import tiktoken
 
 # Load environment variables from .env file
 load_dotenv()
@@ -55,6 +56,35 @@ def chat_with_gpt(messages, personality):
     except Exception as e: # if there is an error, return the error message
         return f"Error communicating with GPT-4o: {str(e)}"
     
+def num_tokens_from_string(string: str, encoding_name: str = "cl100k_base") -> int:
+    """Returns the number of tokens in a text string."""
+    encoding = tiktoken.get_encoding(encoding_name)
+    num_tokens = len(encoding.encode(string))
+    return num_tokens 
+
+def split_transcript(transcript, max_tokens=125000):
+    """Split the transcript into chunks if it exceeds max_tokens."""
+    if num_tokens_from_string(transcript) <= max_tokens:
+        return [transcript]  # Return the entire transcript as a single chunk
+
+    words = transcript.split()
+    chunks = []
+    current_chunk = []
+    current_count = 0
+
+    for word in words:
+        word_tokens = num_tokens_from_string(word)
+        if current_count + word_tokens > max_tokens:
+            chunks.append(' '.join(current_chunk))
+            current_chunk = []
+            current_count = 0
+        current_chunk.append(word)
+        current_count += word_tokens
+
+    if current_chunk:
+        chunks.append(' '.join(current_chunk))
+
+    return chunks
 
 def get_transcript(url):
     video_id = url.split('/')[-1] if 'youtu.be' in url else parse_qs(urlparse(url).query).get('v', [None])[0]
@@ -128,7 +158,21 @@ def generate_markdown_file(content, title):
         f.write(content)
     
     return file_path
-    
+
+def process_transcript(chunks, query, personality):
+    """Process the transcript, either as a whole or in chunks."""
+    if len(chunks) == 1:
+        # Process the entire transcript at once
+        full_query = f"Based on this transcript, {query}\n\nTranscript:\n{chunks[0]}"
+        return chat_with_gpt([{"role": "user", "content": full_query}], personality)
+    else:
+        # Process in chunks
+        combined_response = ""
+        for i, chunk in enumerate(chunks):
+            chunk_query = f"Based on this part of the transcript, {query}\n\nTranscript part {i+1}:\n{chunk}"
+            chunk_response = chat_with_gpt([{"role": "user", "content": chunk_query}], personality)
+            combined_response += f"\n\nInsights from part {i+1}:\n{chunk_response}"
+        return combined_response   
 
 def main():
     print(bold(blue("\nWelcome to the YouTube Video Summarizer and Chatbot!")))
@@ -167,8 +211,11 @@ def main():
             if 'youtube.com' in user_input or 'youtu.be' in user_input:
                 try:
                     current_transcript = get_transcript(user_input)
-                    messages = [{"role": "system", "content": f"You are a helpful assistant with a {args.personality} personality. Here's a transcript of a YouTube video: {current_transcript}"}]
-                    print(bold(green("New video transcript loaded. You can now ask questions about this video.")))
+                    transcript_chunks = split_transcript(current_transcript)
+                    if len(transcript_chunks) > 1:
+                        print(bold(green("New video transcript loaded and split into chunks due to its length. You can now ask questions about this video.")))
+                    else:
+                        print(bold(green("New video transcript loaded. You can now ask questions about this video.")))
                 except Exception as e:
                     print(red(f"Error loading video transcript: {str(e)}"))
                     continue
@@ -177,10 +224,8 @@ def main():
                     print(red("Please load a YouTube video first by pasting its URL."))
                     continue
                 
-                messages.append({"role": "user", "content": user_input})
-                response = chat_with_gpt(messages, args.personality)
+                response = process_transcript(transcript_chunks, user_input, args.personality)
                 print(bold(red("\nAssistant: ")) + apply_markdown_styling(response))
-                messages.append({"role": "assistant", "content": response})
 
                 # Check for markdown content in the response
                 markdown_content = extract_markdown(response)
@@ -190,8 +235,10 @@ def main():
                     title_response = chat_with_gpt([{"role": "user", "content": title_prompt}], "concise")
                     
                     # Generate the markdown file
-                    filename = generate_markdown_file(markdown_content, title_response)
-                    print(green(f"\nMarkdown file generated: {filename}\n"))
+                    file_path = generate_markdown_file(markdown_content, title_response)
+                    print(green(f"\nMarkdown file generated: {file_path}\n"))
+                else:
+                    print(blue("\nNo Markdown content detected in this response.\n"))
 
     except KeyboardInterrupt:
         print("\nExiting...")
