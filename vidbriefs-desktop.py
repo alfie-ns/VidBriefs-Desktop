@@ -7,6 +7,8 @@ from urllib.parse import urlparse, parse_qs
 from dotenv import load_dotenv
 import sys, os, re
 import textwrap
+from slugify import slugify
+import datetime
 
 # Load environment variables from .env file
 load_dotenv()
@@ -79,6 +81,54 @@ def apply_markdown_styling(text):
     
     return text
 
+def extract_markdown(text):
+    """Extract markdown content from the text."""
+    # Check if the text contains any Markdown-like formatting
+    if re.search(r'(^|\n)#|\*\*|__|\[.*\]\(.*\)|\n-\s', text):
+        return text  # Return the entire text if it contains Markdown formatting
+    return None
+
+def slugify(text):
+    """
+    Create a slug from the given text.
+    """
+    # Convert to lowercase
+    text = text.lower()
+    # Remove non-word characters (everything except numbers and letters)
+    text = re.sub(r'[^\w\s-]', '', text)
+    # Replace all spaces with hyphens
+    text = re.sub(r'\s+', '-', text)
+    return text
+
+def generate_markdown_file(content, title):
+    """Generate a Markdown file with the given content and title in a 'Markdown' folder."""
+    if not title or title.strip() == "":
+        title = "Untitled Document"
+    
+    folder_name = "Markdown"
+    
+    # Create the folder if it doesn't exist
+    if not os.path.exists(folder_name):
+        os.makedirs(folder_name)
+    
+    # Generate a slug for the filename
+    slug = slugify(title)
+    
+    # Create a unique filename with a timestamp
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"{slug}_{timestamp}.md"
+    
+    # Full path for the file
+    file_path = os.path.join(folder_name, filename)
+    
+    # Write the content to the file
+    with open(file_path, 'w') as f:
+        f.write(f"# {title}\n\n")
+        f.write(content)
+    
+    return file_path
+    
+
 def main():
     print(bold(blue("\nWelcome to the YouTube Video Summarizer and Chatbot!")))
     print("Before we begin, let's personalize your experience\n")
@@ -130,6 +180,17 @@ def main():
                 response = chat_with_gpt(messages, args.personality)
                 print(bold(red("\nAssistant: ")) + apply_markdown_styling(response))
                 messages.append({"role": "assistant", "content": response})
+
+                # Check for markdown content in the response
+                markdown_content = extract_markdown(response)
+                if markdown_content:
+                    # Generate a title for the markdown file
+                    title_prompt = f"Generate a brief, concise title (5 words or less) for this content:\n\n{markdown_content[:200]}..."
+                    title_response = chat_with_gpt([{"role": "user", "content": title_prompt}], "concise")
+                    
+                    # Generate the markdown file
+                    filename = generate_markdown_file(markdown_content, title_response)
+                    print(green(f"\nMarkdown file generated: {filename}\n"))
 
     except KeyboardInterrupt:
         print("\nExiting...")
