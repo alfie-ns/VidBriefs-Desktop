@@ -7,7 +7,6 @@ from urllib.parse import urlparse, parse_qs
 from dotenv import load_dotenv
 import sys, os, re
 import textwrap
-from slugify import slugify
 import datetime
 
 # Load environment variables from .env file
