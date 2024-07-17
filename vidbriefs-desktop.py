@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+# Dependencies:
 from openai import OpenAI
 import argparse
 from youtube_transcript_api import YouTubeTranscriptApi
@@ -41,16 +42,17 @@ def red(text):
 def green(text):
     return format_text(text, "32")
 
+# chat_with_gpt function
 def chat_with_gpt(messages, personality):
     messages.append({"role": "system", "content": f"You are a helpful assistant with a {personality} personality."})
-    
-    try:
+    # init the conversation specifying the personality
+    try: # try to get a response from GPT-4o
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=messages
         )
         return response.choices[0].message.content
-    except Exception as e:
+    except Exception as e: # if there is an error, return the error message
         return f"Error communicating with GPT-4o: {str(e)}"
     
 
@@ -60,9 +62,9 @@ def get_transcript(url):
     if not video_id:
         raise ValueError("No video ID found in URL")
     
-    transcript = YouTubeTranscriptApi.get_transcript(video_id)
-    sentences = [entry['text'] for entry in transcript]
-    return " ".join(sentences)
+    transcript = YouTubeTranscriptApi.get_transcript(video_id) # Get the transcript for the video
+    sentences = [entry['text'] for entry in transcript] # Extract the text into a list of sentences
+    return " ".join(sentences) # Join the sentences into a single string
 
 def apply_markdown_styling(text):
     """
