@@ -49,7 +49,7 @@ def chat_with_gpt(messages, personality):
     # init the conversation specifying the personality
     try: # try to get a response from GPT-4o
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4o-mini",
             messages=messages
         )
         return response.choices[0].message.content
