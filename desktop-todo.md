@@ -1,2 +1,3 @@
 - [ ] Get Ted Talk summarisations working
 - [X] Improve vidbriefs-desktop to generate a markdown file for video summaries and paste them in 'Markdown' folder
+- [ ] https://youtu.be/uhS8QPDcG-M?si=YiIYqFv2r8a3Ssfe
