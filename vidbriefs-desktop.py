@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# PROMPT: insert Claude version to choose with instead of gpt4o, initially check what AI user is choosing
+
 # Dependencies:
 from openai import OpenAI
 import argparse
