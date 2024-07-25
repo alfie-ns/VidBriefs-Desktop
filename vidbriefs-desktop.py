@@ -177,7 +177,7 @@ def process_transcript(chunks, query, personality):
         return combined_response   
 
 def main():
-    print(bold(blue("\nWelcome to the YouTube Video Summarizer and Chatbot!")))
+    print(bold(blue("\nWelcome to the YouTube Video Summariser and Chatbot!")))
     print("Before we begin, let's personalize your experience\n")
     choice = input(bold(textwrap.dedent("""
     How would you like to personalise the assistant? 
@@ -204,7 +204,7 @@ def main():
 
     try:
         while True:
-            user_input = input(bold("\nEnter a YouTube URL or your message: ")).strip()
+            user_input = input(bold("\nEnter a YouTube URL, your message, or 'exit': ")).strip()
 
             if user_input.lower() == 'exit':
                 print("Exiting...")
