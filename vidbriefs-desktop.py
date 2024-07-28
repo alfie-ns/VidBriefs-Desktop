@@ -4,11 +4,12 @@
 
 # Dependencies:
 from openai import OpenAI
+import anthropic
 import argparse
 from youtube_transcript_api import YouTubeTranscriptApi
 from urllib.parse import urlparse, parse_qs
 from dotenv import load_dotenv
-import sys, os, re
+import sys, os, re, time
 import textwrap
 import datetime
 import tiktoken
@@ -17,11 +18,13 @@ import tiktoken
 load_dotenv()
 
 # Get OpenAI API key from environment variables
-api_key = os.getenv("OPENAI_API_KEY")
+openai_api_key = os.getenv("OPENAI_API_KEY")
+claude_api_key = os.getenv("ANTHROPIC_API_KEY")
 # || api_key = "sk-...J
 
-# Initialize OpenAI client
-client = OpenAI(api_key=api_key)
+# Initialise OpenAI client
+openai_client = OpenAI(api_key=openai_api_key)
+claude_client = anthropic.Anthropic(api_key=claude_api_key)
 
 # Check if running in a terminal that supports formatting
 def supports_formatting():
@@ -45,18 +48,35 @@ def red(text):
 def green(text):
     return format_text(text, "32")
 
-# chat_with_gpt function
-def chat_with_gpt(messages, personality):
-    messages.append({"role": "system", "content": f"You are a helpful assistant with a {personality} personality."})
-    # init the conversation specifying the personality
-    try: # try to get a response from GPT-4o
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=messages
-        )
-        return response.choices[0].message.content
-    except Exception as e: # if there is an error, return the error message
-        return f"Error communicating with GPT-4o: {str(e)}"
+def chat_with_ai(messages, personality, ai_model):
+    system_message = f"You are a helpful assistant with a {personality} personality."
+    
+    if ai_model == "gpt":
+        try: # try to communicate with GPT-4o-mini
+            messages.insert(0, {"role": "system", "content": system_message})
+            response = openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=messages
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            return f"Error communicating with GPT: {str(e)}"
+    elif ai_model == "claude":
+        try:
+            claude_messages = [
+                {"role": "user", "content": messages[-1]['content']}
+            ]
+            response = claude_client.messages.create(
+                model="claude-3-sonnet-20240229",
+                max_tokens=1000,
+                system=system_message,
+                messages=claude_messages
+            )
+            return response.content[0].text
+        except Exception as e:
+            return f"Error communicating with Claude: {str(e)}"
+    else:
+        return "Invalid AI model selected."
     
 def num_tokens_from_string(string: str, encoding_name: str = "cl100k_base") -> int:
     """Returns the number of tokens in a text string."""
@@ -154,32 +174,39 @@ def generate_markdown_file(content, title):
     # Full path for the file
     file_path = os.path.join(folder_name, filename)
     
-    # Write the content to the file
+    # Write the content to the markdown file
     with open(file_path, 'w') as f:
         f.write(f"# {title}\n\n")
         f.write(content)
     
     return file_path
 
-def process_transcript(chunks, query, personality):
+def process_transcript(chunks, query, personality, ai_model):
     """Process the transcript, either as a whole or in chunks."""
     if len(chunks) == 1:
         # Process the entire transcript at once
         full_query = f"Based on this transcript, {query}\n\nTranscript:\n{chunks[0]}"
-        return chat_with_gpt([{"role": "user", "content": full_query}], personality)
+        return chat_with_ai([{"role": "user", "content": full_query}], personality, ai_model)
     else:
         # Process in chunks
         combined_response = ""
         for i, chunk in enumerate(chunks):
             chunk_query = f"Based on this part of the transcript, {query}\n\nTranscript part {i+1}:\n{chunk}"
-            chunk_response = chat_with_gpt([{"role": "user", "content": chunk_query}], personality)
+            chunk_response = chat_with_ai([{"role": "user", "content": chunk_query}], personality, ai_model)
             combined_response += f"\n\nInsights from part {i+1}:\n{chunk_response}"
         return combined_response   
 
 def main():
     print(bold(blue("\nWelcome to the YouTube Video Summariser and Chatbot!")))
     print("Before we begin, let's personalize your experience\n")
-    choice = input(bold(textwrap.dedent("""
+    
+    # Ask for AI model preference
+    ai_model = input(bold("Choose your AI model (gpt/claude): ")).strip().lower()
+    while ai_model not in ["gpt", "claude"]:
+        print(red("Invalid choice. Please enter 'gpt' or 'claude'."))
+        ai_model = input(bold("Choose your AI model (gpt/claude): ")).strip().lower()
+
+    personality_choice = input(bold(textwrap.dedent("""
     How would you like to personalise the assistant? 
     (Choose one or combine, e.g., 'concise and technical')
 
@@ -187,27 +214,28 @@ def main():
     - concise         - analytical     - creative
     - humorous        - empathetic     - motivational
     - skeptical       - educational    - technical
-    - casual          - formal         - enthusiastic
+    - casual          - formal         - logical
 
     Your choice: """)))
     
-    parser = argparse.ArgumentParser(description="Interactive YouTube video summarizer and chatbot.")
-    parser.add_argument("--personality", type=str, help=f"Personality of the assistant: {choice}", default=choice or "friendly and helpful")
-    args = parser.parse_args()
+    personality = personality_choice or "friendly and helpful"
+
+    print(f"\nGreat! Your {ai_model.upper()} assistant will be", bold(personality))
+    print("Paste a YouTube URL to start chatting about videos of your interest.")
+    print("Type 'exit' to quit the program.")
 
     messages = []
     current_transcript = ""
-
-    print("\nGreat! Your assistant will be", bold(args.personality))
-    print("Paste a YouTube URL to start chatting with GPT-4o about videos of your interest.")
-    print("Type 'exit' to quit the program.")
 
     try:
         while True:
             user_input = input(bold("\nEnter a YouTube URL, your message, or 'exit': ")).strip()
 
             if user_input.lower() == 'exit':
+                os.system('clear') # Clear the terminal screen
                 print("Exiting...")
+                time.sleep(1.5)
+                os.system('clear') # Clear the terminal screen
                 break
 
             if 'youtube.com' in user_input or 'youtu.be' in user_input:
@@ -226,17 +254,15 @@ def main():
                     print(red("Please load a YouTube video first by pasting its URL."))
                     continue
                 
-                response = process_transcript(transcript_chunks, user_input, args.personality)
+                response = process_transcript(transcript_chunks, user_input, personality, ai_model)
                 print(bold(red("\nAssistant: ")) + apply_markdown_styling(response))
 
                 # Check for markdown content in the response
                 markdown_content = extract_markdown(response)
                 if markdown_content:
-                    # Generate a title for the markdown file
                     title_prompt = f"Generate a brief, concise title (5 words or less) for this content:\n\n{markdown_content[:200]}..."
-                    title_response = chat_with_gpt([{"role": "user", "content": title_prompt}], "concise")
+                    title_response = chat_with_ai([{"role": "user", "content": title_prompt}], "concise", ai_model)
                     
-                    # Generate the markdown file
                     file_path = generate_markdown_file(markdown_content, title_response)
                     print(green(f"\nMarkdown file generated: {file_path}\n"))
                 else:
