@@ -197,6 +197,8 @@ def process_transcript(chunks, query, personality, ai_model):
         return combined_response   
 
 def main():
+
+    # 1ST SPECIFY GPT/ANTHROPIC
     print(bold(blue("\nWelcome to the YouTube Video Summariser and Chatbot!")))
     print("Before we begin, let's personalize your experience\n")
     
@@ -218,7 +220,7 @@ def main():
 
     Your choice: """)))
     
-    personality = personality_choice or "friendly and helpful"
+    personality = personality_choice or "friendly and helpful" # defualt to 'friendly and helpful' if empty
 
     print(f"\nGreat! Your {ai_model.upper()} assistant will be", bold(personality))
     print("Paste a YouTube URL to start chatting about videos of your interest.")
@@ -229,6 +231,7 @@ def main():
 
     try:
         while True:
+            os.system('clear') # Clear the terminal screen
             user_input = input(bold("\nEnter a YouTube URL, your message, or 'exit': ")).strip()
 
             if user_input.lower() == 'exit':
@@ -268,7 +271,7 @@ def main():
                 else:
                     print(blue("\nNo Markdown content detected in this response.\n"))
 
-    except KeyboardInterrupt:
+    except KeyboardInterrupt: # Handle Ctrl+C
         print("\nExiting...")
 
 if __name__ == "__main__":
