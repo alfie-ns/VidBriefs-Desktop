@@ -1,3 +1,4 @@
 .env
 # trailing slash to indicate directory
 venv/ 
+*.DS_Store
