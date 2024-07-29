@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*- 
-# Dependencies::
+# Remember to buy OpenAI credits to use the API
+
+# Dependencies:
 import sys, os, re, time
 from openai import OpenAI
 import anthropic
@@ -8,10 +10,11 @@ import anthropic
 from youtube_transcript_api import YouTubeTranscriptApi
 from urllib.parse import urlparse, parse_qs
 from dotenv import load_dotenv
-import textwrap
-import datetime
-import tiktoken
-import argparse
+
+import textwrap # for text formatting
+import datetime # for timestamping files
+import tiktoken # for tokenizing text
+import argparse # for command-line arguments
 
 # Load environment variables from .env file
 load_dotenv()
@@ -53,13 +56,16 @@ def green(text):
 # ------------------------------------------------------------------------------
 
 # AI Communication Functions -
-def chat_with_ai(messages, personality, ai_model):
+def chat_with_ai(messages, personality, ai_model, youtube_link):
     system_message = f"You are a helpful assistant with a {personality} personality."
-    instuction = "You will assist the user with there quesiton about the video and generate markdown files, at the bottom of the file, it will include the link above the name of the video."
+    instruction = f"You will assist the user with their question about the video and generate markdown files. When referencing the video, always use this exact link: {youtube_link}. Do not generate or use any placeholder or example links."
     
+    
+    # [ ] Create functionality to give user option for how much tokens to use
+
     if ai_model == "gpt":
         try: # try to communicate with GPT-4o-mini
-            messages.insert(0, {"role": "system", "content": system_message, "role": "system", "content": instuction})
+            messages.insert(0, {"role": "system", "content": system_message, "role": "system", "content": instruction})
             response = openai_client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=messages
@@ -74,7 +80,7 @@ def chat_with_ai(messages, personality, ai_model):
             ]
             response = claude_client.messages.create(
                 model="claude-3-sonnet-20240229",
-                max_tokens=1000,
+                max_tokens=750,
                 system=system_message,
                 messages=claude_messages
             )
@@ -326,7 +332,7 @@ def main():
                     
                     # Process the transcript with the entire conversation history
                     full_query = f"Based on this transcript and our conversation so far, please respond to the latest message: {user_input}\n\nTranscript:\n{current_transcript}"
-                    response = chat_with_ai(messages + [{"role": "user", "content": full_query}], personality, ai_model)
+                    response = chat_with_ai(messages + [{"role": "user", "content": full_query}], personality, ai_model, current_youtube_link)
                     
                     print(bold(red("\nAssistant: ")) + apply_markdown_styling(response))
                     
@@ -337,7 +343,7 @@ def main():
                     markdown_content = extract_markdown(response)
                     if markdown_content:
                         title_prompt = f"Generate a brief, concise title (5 words or less) for this content:\n\n{markdown_content[:200]}..."
-                        title_response = chat_with_ai([{"role": "user", "content": title_prompt}], "concise", ai_model)
+                        title_response = chat_with_ai([{"role": "user", "content": title_prompt}], "concise", ai_model, current_youtube_link)
                         
                         file_path = generate_markdown_file(markdown_content, title_response, current_youtube_link)  # Pass the current YouTube link
                         print(green(f"\nMarkdown file generated: {file_path}\n"))
