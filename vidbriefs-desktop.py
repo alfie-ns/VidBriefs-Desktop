@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-
-# PROMPT: insert Claude version to choose with instead of gpt4o, initially check what AI user is choosing
-
+# -*- coding: utf-8 -*- 
 # Dependencies:
 from openai import OpenAI
 import anthropic
@@ -196,13 +194,10 @@ def process_transcript(chunks, query, personality, ai_model):
             combined_response += f"\n\nInsights from part {i+1}:\n{chunk_response}"
         return combined_response   
 
-def main():
 
-    # 1ST SPECIFY GPT/ANTHROPIC
-    print(bold(blue("\nWelcome to the YouTube Video Summariser and Chatbot!")))
-    print("Before we begin, let's personalize your experience\n")
+def main():
+    print(bold(blue("\nYoutube Transcript AI Assistant\n")))
     
-    # Ask for AI model preference
     ai_model = input(bold("Choose your AI model (gpt/claude): ")).strip().lower()
     while ai_model not in ["gpt", "claude"]:
         print(red("Invalid choice. Please enter 'gpt' or 'claude'."))
@@ -210,17 +205,18 @@ def main():
 
     personality_choice = input(bold(textwrap.dedent("""
     How would you like to personalise the assistant? 
-    (Choose one or combine, e.g., 'concise and technical')
+    (Choose one or combine, e.g., 'concise and technical, 'straight-to-the-point', 
 
-    Options:
+    Possible options:
+    LOW or MEDIUM or HIGH                                                    
     - concise         - analytical     - creative
-    - humorous        - empathetic     - motivational
-    - skeptical       - educational    - technical
+    - teacher         - empathetic     - motivational
+    - skeptical       - mentor         - technical
     - casual          - formal         - logical
 
     Your choice: """)))
     
-    personality = personality_choice or "friendly and helpful" # defualt to 'friendly and helpful' if empty
+    personality = personality_choice or "friendly and helpful" # Default personality
 
     print(f"\nGreat! Your {ai_model.upper()} assistant will be", bold(personality))
     print("Paste a YouTube URL to start chatting about videos of your interest.")
@@ -228,18 +224,15 @@ def main():
 
     messages = []
     current_transcript = ""
+    transcript_chunks = []
 
     try:
         while True:
-            os.system('clear') # Clear the terminal screen
             user_input = input(bold("\nEnter a YouTube URL, your message, or 'exit': ")).strip()
 
             if user_input.lower() == 'exit':
-                os.system('clear') # Clear the terminal screen
                 print("Exiting...")
-                time.sleep(1.5)
-                os.system('clear') # Clear the terminal screen
-                break
+                sys.exit()
 
             if 'youtube.com' in user_input or 'youtu.be' in user_input:
                 try:
@@ -249,6 +242,7 @@ def main():
                         print(bold(green("New video transcript loaded and split into chunks due to its length. You can now ask questions about this video.")))
                     else:
                         print(bold(green("New video transcript loaded. You can now ask questions about this video.")))
+                    messages = []  # Reset conversation history for new video
                 except Exception as e:
                     print(red(f"Error loading video transcript: {str(e)}"))
                     continue
@@ -257,8 +251,17 @@ def main():
                     print(red("Please load a YouTube video first by pasting its URL."))
                     continue
                 
-                response = process_transcript(transcript_chunks, user_input, personality, ai_model)
+                # Add user message to conversation history
+                messages.append({"role": "user", "content": user_input})
+                
+                # Process the transcript with the entire conversation history
+                full_query = f"Based on this transcript and our conversation so far, please respond to the latest message: {user_input}\n\nTranscript:\n{current_transcript}"
+                response = chat_with_ai(messages + [{"role": "user", "content": full_query}], personality, ai_model)
+                
                 print(bold(red("\nAssistant: ")) + apply_markdown_styling(response))
+                
+                # Add assistant's response to conversation history
+                messages.append({"role": "assistant", "content": response})
 
                 # Check for markdown content in the response
                 markdown_content = extract_markdown(response)
@@ -271,8 +274,10 @@ def main():
                 else:
                     print(blue("\nNo Markdown content detected in this response.\n"))
 
-    except KeyboardInterrupt: # Handle Ctrl+C
+    except KeyboardInterrupt:
         print("\nExiting...")
 
+if __name__ == "__main__":
+    main()
 if __name__ == "__main__":
     main()
