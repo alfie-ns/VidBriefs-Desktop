@@ -27,8 +27,9 @@ claude_client = anthropic.Anthropic(api_key=claude_api_key)
 # Check if running in a terminal that supports formatting
 def supports_formatting():
     return sys.stdout.isatty()
+           #sys.stdout.isatty() returns True if the file descriptor
 
-# Formatting functions
+# Formatting functions --------------------------------------------------------
 def format_text(text, format_code):
     if supports_formatting():
         return f"\033[{format_code}m{text}\033[0m"
@@ -45,7 +46,9 @@ def red(text):
 
 def green(text):
     return format_text(text, "32")
-
+# ------------------------------------------------------------------------------
+# Functions:
+# ------------------------------------------------------------------------------
 def chat_with_ai(messages, personality, ai_model):
     system_message = f"You are a helpful assistant with a {personality} personality."
     
@@ -192,92 +195,102 @@ def process_transcript(chunks, query, personality, ai_model):
             chunk_query = f"Based on this part of the transcript, {query}\n\nTranscript part {i+1}:\n{chunk}"
             chunk_response = chat_with_ai([{"role": "user", "content": chunk_query}], personality, ai_model)
             combined_response += f"\n\nInsights from part {i+1}:\n{chunk_response}"
-        return combined_response   
+        return combined_response  
 
+# ------------------------------------------------------------------------------
+# Main Program: 
 
 def main():
-    print(bold(blue("\nYoutube Transcript AI Assistant\n")))
-    
-    ai_model = input(bold("Choose your AI model (gpt/claude): ")).strip().lower()
-    while ai_model not in ["gpt", "claude"]:
-        print(red("Invalid choice. Please enter 'gpt' or 'claude'."))
+    while True:  # Outer loop for restart functionality
+        os.system('clear')
+        # ----------------- Main Program -----------------
+
+        print(bold(blue("\nYoutube Transcript AI Assistant\n")))
+        
         ai_model = input(bold("Choose your AI model (gpt/claude): ")).strip().lower()
+        while ai_model not in ["gpt", "claude"]:
+            print(red("Invalid choice. Please enter 'gpt' or 'claude'."))
+            ai_model = input(bold("Choose your AI model (gpt/claude): ")).strip().lower()
 
-    personality_choice = input(bold(textwrap.dedent("""
-    How would you like to personalise the assistant? 
-    (Choose one or combine, e.g., 'concise and technical, 'straight-to-the-point', 
+        personality_choice = input(bold(textwrap.dedent("""
+        How would you like to personalise the assistant? 
+        (Choose one or combine, e.g., 'concise and technical, 'straight-to-the-point', 
 
-    Possible options:
-    LOW or MEDIUM or HIGH                                                    
-    - concise         - analytical     - creative
-    - teacher         - empathetic     - motivational
-    - skeptical       - mentor         - technical
-    - casual          - formal         - logical
+        Possible options:
+        LOW or MEDIUM or HIGH 
+        - straight-to-the-point -...                                            
+        - concise         - analytical     - creative
+        - teacher         - empathetic     - motivational
+        - skeptical       - mentor         - technical
+        - casual          - formal         - logical
 
-    Your choice: """)))
-    
-    personality = personality_choice or "friendly and helpful" # Default personality
+        Your choice: """)))
+        
+        personality = personality_choice or "friendly and helpful" # Default personality
 
-    print(f"\nGreat! Your {ai_model.upper()} assistant will be", bold(personality))
-    print("Paste a YouTube URL to start chatting about videos of your interest.")
-    print("Type 'exit' to quit the program.")
+        print(f"\nGreat! Your {ai_model.upper()} assistant will be", bold(personality))
+        print("Paste a YouTube URL to start chatting about videos of your interest.")
+        print("Type 'exit' to quit the program or 'restart' to start over.")
 
-    messages = []
-    current_transcript = ""
-    transcript_chunks = []
+        messages = []
+        current_transcript = ""
+        transcript_chunks = []
 
-    try:
-        while True:
-            user_input = input(bold("\nEnter a YouTube URL, your message, or 'exit': ")).strip()
+        try: # Inner loop for conversation functionality
+            while True:
+                user_input = input(bold("\nEnter a YouTube URL, your message, 'restart', or 'exit': ")).strip()
 
-            if user_input.lower() == 'exit':
-                print("Exiting...")
-                sys.exit()
+                if user_input.lower() == 'exit':
+                    print("Exiting...")
+                    sys.exit()
 
-            if 'youtube.com' in user_input or 'youtu.be' in user_input:
-                try:
-                    current_transcript = get_transcript(user_input)
-                    transcript_chunks = split_transcript(current_transcript)
-                    if len(transcript_chunks) > 1:
-                        print(bold(green("New video transcript loaded and split into chunks due to its length. You can now ask questions about this video.")))
-                    else:
-                        print(bold(green("New video transcript loaded. You can now ask questions about this video.")))
-                    messages = []  # Reset conversation history for new video
-                except Exception as e:
-                    print(red(f"Error loading video transcript: {str(e)}"))
-                    continue
-            else:
-                if not current_transcript:
-                    print(red("Please load a YouTube video first by pasting its URL."))
-                    continue
-                
-                # Add user message to conversation history
-                messages.append({"role": "user", "content": user_input})
-                
-                # Process the transcript with the entire conversation history
-                full_query = f"Based on this transcript and our conversation so far, please respond to the latest message: {user_input}\n\nTranscript:\n{current_transcript}"
-                response = chat_with_ai(messages + [{"role": "user", "content": full_query}], personality, ai_model)
-                
-                print(bold(red("\nAssistant: ")) + apply_markdown_styling(response))
-                
-                # Add assistant's response to conversation history
-                messages.append({"role": "assistant", "content": response})
+                if user_input.lower() == "restart":
+                    print(bold(green("Restarting the assistant...")))
+                    break  # Break the inner loop to restart
 
-                # Check for markdown content in the response
-                markdown_content = extract_markdown(response)
-                if markdown_content:
-                    title_prompt = f"Generate a brief, concise title (5 words or less) for this content:\n\n{markdown_content[:200]}..."
-                    title_response = chat_with_ai([{"role": "user", "content": title_prompt}], "concise", ai_model)
-                    
-                    file_path = generate_markdown_file(markdown_content, title_response)
-                    print(green(f"\nMarkdown file generated: {file_path}\n"))
+                if 'youtube.com' in user_input or 'youtu.be' in user_input:
+                    try:
+                        current_transcript = get_transcript(user_input)
+                        transcript_chunks = split_transcript(current_transcript)
+                        if len(transcript_chunks) > 1:
+                            print(bold(green("New video transcript loaded and split into chunks due to its length. You can now ask questions about this video.")))
+                        else:
+                            print(bold(green("New video transcript loaded. You can now ask questions about this video.")))
+                        messages = []  # Reset conversation history for new video
+                    except Exception as e:
+                        print(red(f"Error loading video transcript: {str(e)}"))
+                        continue
                 else:
-                    print(blue("\nNo Markdown content detected in this response.\n"))
+                    if not current_transcript:
+                        print(red("Please load a YouTube video first by pasting its URL."))
+                        continue
+                    
+                    # Add user message to conversation history
+                    messages.append({"role": "user", "content": user_input})
+                    
+                    # Process the transcript with the entire conversation history
+                    full_query = f"Based on this transcript and our conversation so far, please respond to the latest message: {user_input}\n\nTranscript:\n{current_transcript}"
+                    response = chat_with_ai(messages + [{"role": "user", "content": full_query}], personality, ai_model)
+                    
+                    print(bold(red("\nAssistant: ")) + apply_markdown_styling(response))
+                    
+                    # Add assistant's response to conversation history
+                    messages.append({"role": "assistant", "content": response})
 
-    except KeyboardInterrupt:
-        print("\nExiting...")
+                    # Check for markdown content in the response
+                    markdown_content = extract_markdown(response)
+                    if markdown_content:
+                        title_prompt = f"Generate a brief, concise title (5 words or less) for this content:\n\n{markdown_content[:200]}..."
+                        title_response = chat_with_ai([{"role": "user", "content": title_prompt}], "concise", ai_model)
+                        
+                        file_path = generate_markdown_file(markdown_content, title_response)
+                        print(green(f"\nMarkdown file generated: {file_path}\n"))
+                    else:
+                        print(blue("\nNo Markdown content detected in this response.\n"))
 
-if __name__ == "__main__":
-    main()
+        except KeyboardInterrupt:
+            print("\nExiting...")
+            sys.exit()
+
 if __name__ == "__main__":
     main()
