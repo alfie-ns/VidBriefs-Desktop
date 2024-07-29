@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# vidbriefs-tedtalks.py
+
 from openai import OpenAI
 import argparse
 from dotenv import load_dotenv
