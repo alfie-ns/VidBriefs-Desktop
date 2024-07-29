@@ -6,7 +6,6 @@ from openai import OpenAI
 import anthropic
 
 from youtube_transcript_api import YouTubeTranscriptApi
-from youtube_transcript_api
 from urllib.parse import urlparse, parse_qs
 from dotenv import load_dotenv
 import textwrap
@@ -56,10 +55,11 @@ def green(text):
 # AI Communication Functions -
 def chat_with_ai(messages, personality, ai_model):
     system_message = f"You are a helpful assistant with a {personality} personality."
+    instuction = "You will assist the user with there quesiton about the video and generate markdown files, at the bottom of the file, it will include the link above the name of the video."
     
     if ai_model == "gpt":
         try: # try to communicate with GPT-4o-mini
-            messages.insert(0, {"role": "system", "content": system_message})
+            messages.insert(0, {"role": "system", "content": system_message, "role": "system", "content": instuction})
             response = openai_client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=messages
@@ -131,8 +131,17 @@ def split_transcript(transcript, max_tokens=125000):
     return chunks
 
 def get_transcript(url):
+    '''
+      Extract video ID from YouTube URL:
+          For youtu.be links: use the last part of the URL after '/'
+          For full URLs: parse query string and get 'v' parameter
+          Falls back to None if 'v' parameter is not found
+    '''
     video_id = url.split('/')[-1] if 'youtu.be' in url else parse_qs(urlparse(url).query).get('v', [None])[0]
-    
+
+
+    # url_split splits the URL by '/' and takes the last part, which is the video ID.
+    # if url is a youtu.be link, it takes the last part of the URL.
     if not video_id:
         raise ValueError("No video ID found in URL")
     
@@ -176,8 +185,8 @@ def slugify(text):
     text = re.sub(r'\s+', '-', text)
     return text
 
-def generate_markdown_file(content, title):
-    """Generate a Markdown file with the given content and title in a 'Markdown' folder."""
+def generate_markdown_file(content, title, youtube_link):
+    """Generate a Markdown file with the given content, title, and YouTube link in a 'Markdown' folder."""
     if not title or title.strip() == "":
         title = "Untitled Document"
     
@@ -201,8 +210,13 @@ def generate_markdown_file(content, title):
     with open(file_path, 'w') as f:
         f.write(f"# {title}\n\n")
         f.write(content)
+        f.write(f"\n\n---\n\n[Link to Video]({youtube_link})")
     
     return file_path
+
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
 # Main Program: 
@@ -230,7 +244,8 @@ def main():
         Examples: ----------------------------------------------------------------
         - 'FRIENDLY and HELPFUL with a touch of HUMOR'
         - 'PROFESSIONAL and INFORMATIVE with a hint of SARCASM'
-        - 'CASUAL and ENGAGING with a focus on PRACTICALITY'                                                                                                     
+        - 'CASUAL and ENGAGING with a focus on PRACTICALITY' 
+        - Logical teacher                                                                                                    
         - 'HIGH summarizer and MEDIUM explainer'
         - 'LOW questioner with HIGH practical focus'
         - 'MEDIUM friendly and HIGH professional'
@@ -273,11 +288,15 @@ def main():
         transcript_chunks = [] # init as empty list
 
         try: # Inner loop for conversation functionality
+            current_youtube_link = ""  # Initialize YouTube link variable
             while True:
                 user_input = input(bold("\nEnter a YouTube URL, your message, 'restart', or 'exit': ")).strip()
 
                 if user_input.lower() == 'exit':
-                    print("Exiting...")
+                    os.system('clear')
+                    print("\nExiting...")
+                    time.sleep(1.5)
+                    os.system('clear')
                     sys.exit()
 
                 if user_input.lower() == "restart":
@@ -285,6 +304,7 @@ def main():
                     break  # Break the inner loop to restart
 
                 if 'youtube.com' in user_input or 'youtu.be' in user_input:
+                    current_youtube_link = user_input  # Store the YouTube link
                     try:
                         current_transcript = get_transcript(user_input)
                         transcript_chunks = split_transcript(current_transcript)
@@ -319,7 +339,7 @@ def main():
                         title_prompt = f"Generate a brief, concise title (5 words or less) for this content:\n\n{markdown_content[:200]}..."
                         title_response = chat_with_ai([{"role": "user", "content": title_prompt}], "concise", ai_model)
                         
-                        file_path = generate_markdown_file(markdown_content, title_response)
+                        file_path = generate_markdown_file(markdown_content, title_response, current_youtube_link)  # Pass the current YouTube link
                         print(green(f"\nMarkdown file generated: {file_path}\n"))
                     else:
                         print(blue("\nNo Markdown content detected in this response.\n"))
@@ -328,7 +348,6 @@ def main():
             print("\nExiting...")
             os.system('clear')
             sys.exit()
-            
 
-if __name__ == "__main__":
+if __name__ == "__main__": # Run the main function if the script is executed in any way other than being imported as a module
     main()
