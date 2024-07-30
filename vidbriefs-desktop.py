@@ -1,20 +1,30 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*- 
-# Remember to buy OpenAI credits to use the API
 
-# Dependencies:
-import sys, os, re, time
+# Dependencies ------------------------------------------------------------------
+import sys, os, re, time # system operations, regular expressions, time
+from dotenv import load_dotenv # for loading environment variables from .env file
+
+# --------------AI APIS----------------
+
 from openai import OpenAI
 import anthropic
 
+# --------------YouTube Transcripts----------------
+
 from youtube_transcript_api import YouTubeTranscriptApi
 from urllib.parse import urlparse, parse_qs
-from dotenv import load_dotenv
+
+# --------------formatting dependencies----------------
 
 import textwrap # for text formatting
 import datetime # for timestamping files
 import tiktoken # for tokenizing text
 import argparse # for command-line arguments
+
+# ------------------------------------------------------------------------------
+# vidbriefs-desktop.py 🟣 -------------------------------------------------------
+# -------------------------------------initialisation---------------------------
 
 # Load environment variables from .env file
 load_dotenv()
@@ -22,11 +32,14 @@ load_dotenv()
 # Get OpenAI API key from environment variables
 openai_api_key = os.getenv("OPENAI_API_KEY")
 claude_api_key = os.getenv("ANTHROPIC_API_KEY")
-# || api_key = "sk-...J
+# || api_key = "sk-...""
 
 # Initialise OpenAI client
 openai_client = OpenAI(api_key=openai_api_key)
 claude_client = anthropic.Anthropic(api_key=claude_api_key)
+
+# --------------------------------------------------------------------------------
+# Formatting Functions 🟨 --------------------------------------------------------
 
 # Check if running in a terminal that supports formatting
 def supports_formatting():
@@ -51,11 +64,11 @@ def red(text):
 def green(text):
     return format_text(text, "32")
 
-# ------------------------------------------------------------------------------
-# Functions 📼|-------------------------------------------------------------------
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
+# General Functions 🟩 -----------------------------------------------------------
+# --------------------------------------------------------------------------------
 
-# AI Communication Functions -
+# AI Communication Functions -----------------------------------------------------
 def chat_with_ai(messages, personality, ai_model, youtube_link):
     system_message = f"You are a helpful assistant with a {personality} personality."
     instruction = f"You will assist the user with their question about the video and generate markdown files. When referencing the video, always use this exact link: {youtube_link}. Do not generate or use any placeholder or example links."
@@ -80,7 +93,7 @@ def chat_with_ai(messages, personality, ai_model, youtube_link):
             ]
             response = claude_client.messages.create(
                 model="claude-3-sonnet-20240229",
-                max_tokens=750,
+                max_tokens=450,
                 system=system_message,
                 messages=claude_messages
             )
@@ -138,10 +151,10 @@ def split_transcript(transcript, max_tokens=125000):
 
 def get_transcript(url):
     '''
-      Extract video ID from YouTube URL:
-          For youtu.be links: use the last part of the URL after '/'
-          For full URLs: parse query string and get 'v' parameter
-          Falls back to None if 'v' parameter is not found
+        Extract video ID from YouTube URL:
+        For youtu.be links: use the last part of the URL after '/'
+        For full URLs: parse query string and get 'v' parameter
+        Falls back to None if 'v' parameter is not found
     '''
     video_id = url.split('/')[-1] if 'youtu.be' in url else parse_qs(urlparse(url).query).get('v', [None])[0]
 
@@ -225,13 +238,12 @@ def generate_markdown_file(content, title, youtube_link):
 # ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
-# Main Program: 
-
+# Main 🟥 -------------------------------------------------------------- 
+# ------------------------------------------------------------------------------
 def main():
     while True:  # Outer loop for restart 'break' functionality
         os.system('clear')
         # ----------------- Main Program -----------------
-
         print(bold(blue("\nYoutube Transcript AI Assistant\n")))
         
         ai_model = input(bold("Choose your AI model (gpt/claude): ")).strip().lower() # Ask user to choose AI model, strip whitespace and convert to lowercase
@@ -241,7 +253,8 @@ def main():
 
         # Personalise assistant ------------------------------------------------
 
-        personality_choice = input(bold(textwrap.dedent("""
+        # dedent() removes leading whitespace from the text, thus allowing cleaner formatting
+        personality_choice = input(bold(textwrap.dedent(""" 
         How would you like to personalise the assistant?
         (Feel free to describe the personality in your own words, or use the suggestions below)
 
@@ -294,7 +307,7 @@ def main():
         transcript_chunks = [] # init as empty list
 
         try: # Inner loop for conversation functionality
-            current_youtube_link = ""  # Initialize YouTube link variable
+            current_youtube_link = ""  # Initialise YouTube link variable
             while True:
                 user_input = input(bold("\nEnter a YouTube URL, your message, 'restart', or 'exit': ")).strip()
 
@@ -303,7 +316,7 @@ def main():
                     print("\nExiting...")
                     time.sleep(1.5)
                     os.system('clear')
-                    sys.exit()
+                    sys.exit() 
 
                 if user_input.lower() == "restart":
                     print(bold(green("Restarting the assistant...")))
@@ -351,6 +364,8 @@ def main():
                         print(blue("\nNo Markdown content detected in this response.\n"))
 
         except KeyboardInterrupt:
+            os.system('clear')
+            time.sleep(1.75)
             print("\nExiting...")
             os.system('clear')
             sys.exit()
