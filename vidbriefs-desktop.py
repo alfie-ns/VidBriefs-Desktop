@@ -40,6 +40,7 @@ claude_client = anthropic.Anthropic(api_key=claude_api_key)
 
 # --------------------------------------------------------------------------------
 # Formatting Functions 🟨 --------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 # Check if running in a terminal that supports formatting
 def supports_formatting():
@@ -234,10 +235,6 @@ def generate_markdown_file(content, title, youtube_link):
     return file_path
 
 # ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-
-# ------------------------------------------------------------------------------
 # Main 🟥 -------------------------------------------------------------- 
 # ------------------------------------------------------------------------------
 def main():
@@ -363,10 +360,10 @@ def main():
                     else:
                         print(blue("\nNo Markdown content detected in this response.\n"))
 
-        except KeyboardInterrupt:
+        except KeyboardInterrupt: # Handle Ctrl+C to exit the program
             os.system('clear')
-            time.sleep(1.75)
             print("\nExiting...")
+            time.sleep(1.75)
             os.system('clear')
             sys.exit()
 
