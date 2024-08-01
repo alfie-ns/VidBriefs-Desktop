@@ -6,4 +6,11 @@
 4. In the terminal directory for this project, run: **python3 -m venv venv**
 5. Now, run: **source venv/bin/activate**
 6. If previous commands ran correctly, you are now in a dependency virtual environment, now run **./install-requirements.sh**
-7. Run Python file: **./vidbriefs-desktop.py**
+
+./youtube.py - script to load and talk about Youtube videos
+./tedtalks.py - script to reccomend and talk about Ted Talks
+...
+./categorise.py - process to organise markdown files into categories
+--------------------------------------------------------------------
+
+run script: ./{file-name}.py

@@ -112,7 +112,18 @@ def get_ted_talk_content(talk_title): # --Systematic Traversal--
     return "Talk content not found." # If no matching file is found, return this message
 
 def get_all_talk_titles(): # --Breadth-First Processing of Depth-First Traversal--
-    """Get all available TED talk titles from the local directory.
+    """
+    Grabs all TED talk titles from local folders. It's a mix:
+    1. os.walk() goes through directories depth-first.
+    2. We process all files in each directory before moving on.
+    
+    So it checks all files in a folder before diving into subfolders.
+
+    Breadth-first essentially means in the traversal it will first check siblings
+    before the next group.
+
+    Example: If TED-talks has A, B, C folders, and A has 1.md, 2.md:
+    It'll process 1.md and 2.md in A before moving to folder B.
     """
     titles = []
     for root, dirs, files in os.walk("TED-talks"):
@@ -196,7 +207,7 @@ def generate_markdown_file(content, title): # NEED TO GET WORKING
 # Main 🟥 ---------------------------------------------------------------------- 
 # ------------------------------------------------------------------------------
 def main():
-    all_talks = get_all_talk_titles()
+    all_talks = get_all_talk_titles() # function to list ALL talks in TED-talks
 
     while True:  # Outer loop for restart 'break' functionality
         os.system('clear')
