@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*- 
 
 # Dependencies ------------------------------------------------------------------
-import sys, os, re, time # system operations, regular expressions, time
+import sys, os, re, time, random # system operations, regular expressions, time, and random selection
 from dotenv import load_dotenv # for loading environment variables from .env file
 
 # --------------AI APIS----------------
@@ -12,9 +12,7 @@ import anthropic
 
 # --------------TED Talk Data----------------
 
-import pandas as pd # for reading CSV files
-import requests # for making HTTP requests
-from bs4 import BeautifulSoup # for parsing HTML
+import pandas as pd # for reading CSV files if needed
 
 # --------------formatting dependencies----------------
 
@@ -24,7 +22,7 @@ import tiktoken # for tokenizing text
 import argparse # for command-line arguments
 
 # ------------------------------------------------------------------------------
-# tedbriefs.py 🟣 --------------------------------------------------------------
+# tedbriefs.py 🟣 -------------------------------------------------------
 # -------------------------------------initialisation---------------------------
 
 # Load environment variables from .env file
@@ -69,29 +67,31 @@ def green(text):
 # --------------------------------------------------------------------------------
 
 # AI Communication Functions -----------------------------------------------------
-def chat_with_ai(messages, personality, ai_model, ted_talk_url):
-    system_message = f"You are a helpful assistant with a {personality} personality."
-    instruction = f"You will assist the user with their question about the TED talk and generate markdown files. When referencing the talk, always use this exact link: {ted_talk_url}. Do not generate or use any placeholder or example links."
+def chat_with_ai(messages, personality, ai_model, ted_talk_title):
+    system_message = f"You are a helpful assistant with a ({personality}) personality, you will provide the user markdown formatting for the users learning experience."
+    instruction = f"You will assist the user regarding their questions about the TED talk titled '{ted_talk_title}'. Provide insightful analysis and relate the talk's content to real-world applications when appropriate."
     
-    if ai_model == "gpt":
+    if ai_model == "gpt": # if user chooses gpt-4o-mini
         try:
-            messages.insert(0, {"role": "system", "content": system_message, "role": "system", "content": instruction})
+            messages.insert(0, {"role": "system", "content": system_message + " " + instruction})
             response = openai_client.chat.completions.create(
-                model="gpt-4",
+                model="gpt-4o-mini", #£0.460 / 1M output tokens
                 messages=messages
             )
             return response.choices[0].message.content
         except Exception as e:
             return f"Error communicating with GPT: {str(e)}"
     elif ai_model == "claude":
-        try:
+        try:  
+                                      # Claude is 5x more expensive
             claude_messages = [
                 {"role": "user", "content": messages[-1]['content']}
             ]
-            response = claude_client.messages.create(
-                model="claude-3-opus-20240229",
+            response = claude_client.messages.create( # -- EXPENSIVE --
+                model="claude-3-5-sonnet-20240620", #Input: £2.30 per million tokens
+	 	                                            #Output: £11.60 per million tokens
                 max_tokens=1000,
-                system=system_message,
+                system=system_message + " " + instruction,
                 messages=claude_messages
             )
             return response.content[0].text
@@ -100,64 +100,29 @@ def chat_with_ai(messages, personality, ai_model, ted_talk_url):
     else:
         return "Invalid AI model selected."
 
-def process_transcript(chunks, query, personality, ai_model):
-    """Process the transcript, either as a whole or in chunks."""
-    if len(chunks) == 1:
-        # Process the entire transcript at once
-        full_query = f"Based on this transcript, {query}\n\nTranscript:\n{chunks[0]}"
-        return chat_with_ai([{"role": "user", "content": full_query}], personality, ai_model)
-    else:
-        # Process in chunks
-        combined_response = ""
-        for i, chunk in enumerate(chunks):
-            chunk_query = f"Based on this part of the transcript, {query}\n\nTranscript part {i+1}:\n{chunk}"
-            chunk_response = chat_with_ai([{"role": "user", "content": chunk_query}], personality, ai_model)
-            combined_response += f"\n\nInsights from part {i+1}:\n{chunk_response}"
-        return combined_response  
+# TED Talk Processing Functions -------------------------------------------------
+def get_ted_talk_content(talk_title):
+    """Fetch and return the content of a TED talk given its title."""
+    for root, dirs, files in os.walk("TED-talks"): # Recursively walk through the TED-talks directory
+        for file in files: # For each file in the current directory
+            if file.endswith(".md") and talk_title in file: # If the file is a Markdown file and its name contains the talk title
+                with open(os.path.join(root, file), 'r') as f: # Open the file for reading
+                    return f.read() # Read and return the entire content of the file
+    return "Talk content not found." # If no matching file is found, return this message
 
-# Transcript Processing Functions -------------------------------------------------
-def num_tokens_from_string(string: str, encoding_name: str = "cl100k_base") -> int:
-    """Returns the number of tokens in a text string."""
-    encoding = tiktoken.get_encoding(encoding_name)
-    num_tokens = len(encoding.encode(string))
-    return num_tokens 
+def get_all_talk_titles():
+    """Get all available TED talk titles from the local directory."""
+    titles = []
+    for root, dirs, files in os.walk("TED-talks"):
+        for file in files:
+            if file.endswith(".md"):
+                titles.append(file[:-3])  # Remove .md extension
+    return titles
 
-def split_transcript(transcript, max_tokens=125000):
-    """Split the transcript into chunks if it exceeds max_tokens."""
-    if num_tokens_from_string(transcript) <= max_tokens:
-        return [transcript]  # Return the entire transcript as a single chunk
-
-    words = transcript.split()
-    chunks = []
-    current_chunk = []
-    current_count = 0
-
-    for word in words:
-        word_tokens = num_tokens_from_string(word)
-        if current_count + word_tokens > max_tokens:
-            chunks.append(' '.join(current_chunk))
-            current_chunk = []
-            current_count = 0
-        current_chunk.append(word)
-        current_count += word_tokens
-
-    if current_chunk:
-        chunks.append(' '.join(current_chunk))
-
-    return chunks
-
-def get_ted_transcript(url):
-    """Fetch and return the transcript of a TED talk given its URL."""
-    response = requests.get(url)
-    soup = BeautifulSoup(response.content, 'html.parser')
-    transcript_div = soup.find('div', class_='transcript__inner')
-    
-    if not transcript_div:
-        raise ValueError("Transcript not found on the page.")
-    
-    paragraphs = transcript_div.find_all('p')
-    transcript = ' '.join([p.text for p in paragraphs])
-    return transcript
+def recommend_ted_talk(user_interests, all_talks): # ???
+    """Recommend a TED talk based on user interests."""
+    relevant_talks = [talk for talk in all_talks if any(interest.lower() in talk.lower() for interest in user_interests)]
+    return random.choice(relevant_talks) if relevant_talks else random.choice(all_talks)
 
 # Text Styling and Markdown Functions ------------------------------------------------
 def apply_markdown_styling(text):
@@ -184,9 +149,11 @@ def extract_markdown(text):
     return None
 
 def slugify(text):
-    """
-    Create a slug from the given text.
-    """
+    '''
+    The slugify function converts a string into a simplified, URL-friendly format:
+    slug = clean string suitable for filenames or URLs.
+    For example: "Hello, World!" becomes "hello-world".
+    '''
     # Convert to lowercase
     text = text.lower()
     # Remove non-word characters (everything except numbers and letters)
@@ -195,8 +162,8 @@ def slugify(text):
     text = re.sub(r'\s+', '-', text)
     return text
 
-def generate_markdown_file(content, title, ted_talk_url):
-    """Generate a Markdown file with the given content, title, and TED talk link in a 'Markdown' folder."""
+def generate_markdown_file(content, title):
+    """Generate a Markdown file with the given content and title in a 'Markdown' folder."""
     if not title or title.strip() == "":
         title = "Untitled Document"
     
@@ -220,18 +187,19 @@ def generate_markdown_file(content, title, ted_talk_url):
     with open(file_path, 'w') as f:
         f.write(f"# {title}\n\n")
         f.write(content)
-        f.write(f"\n\n---\n\n[Link to TED Talk]({ted_talk_url})")
     
     return file_path
 
 # ------------------------------------------------------------------------------
-# Main 🟥 -------------------------------------------------------------- 
+# Main 🟥 ---------------------------------------------------------------------- 
 # ------------------------------------------------------------------------------
 def main():
+    all_talks = get_all_talk_titles()
+
     while True:  # Outer loop for restart 'break' functionality
         os.system('clear')
         # ----------------- Main Program -----------------
-        print(bold(blue("\nTED Talk Transcript AI Assistant\n")))
+        print(bold(blue("\nTED Talk Analysis Assistant\n")))
         
         ai_model = input(bold("Choose your AI model (gpt/claude): ")).strip().lower()
         while ai_model not in ["gpt", "claude"]:
@@ -263,17 +231,20 @@ def main():
         personality = personality_choice or "BALANCED 🧠 ANALYTICAL-🎨 CREATIVE with HIGH 🌐 MULTIDISCIPLINARY focus. MEDIUM 🗣️ PERSUASIVE with LOW 🤔 SOCRATIC questioning. HIGH 📊 DATA-DRIVEN and MEDIUM 🤝 EMPATHETIC approach."
 
         print(f"\nGreat! Your {ai_model.upper()} assistant will be", bold(personality))
-        print("Paste a TED talk URL to start chatting about the talk.")
-        print("Type 'exit' to quit the program or 'restart' to start over.")
+        
+        user_interests = input(bold("Enter your interests (comma-separated) for TED talk recommendations: ")).split(',')
+        recommended_talk = recommend_ted_talk(user_interests, all_talks)
+        print(green(f"\nRecommended TED Talk: {recommended_talk}"))
+        print("You can start discussing this talk or choose another one.")
+        print("Type 'list' to see all available talks, 'recommend' for a new recommendation,")
+        print("'exit' to quit the program, or 'restart' to start over.")
 
         messages = []
-        current_transcript = ""
-        transcript_chunks = []
+        current_talk = recommended_talk
 
-        try:
-            current_ted_talk_url = ""
+        try:  # Inner loop for conversation functionality
             while True:
-                user_input = input(bold("\nEnter a TED talk URL, your message, 'restart', or 'exit': ")).strip()
+                user_input = input(bold("\nEnter your message, 'list', 'recommend', 'restart', or 'exit': ")).strip()
 
                 if user_input.lower() == 'exit':
                     os.system('clear')
@@ -286,49 +257,52 @@ def main():
                     print(bold(green("Restarting the assistant...")))
                     break  # Break the inner loop to restart
 
-                if 'ted.com/talks' in user_input:
-                    current_ted_talk_url = user_input
-                    try:
-                        current_transcript = get_ted_transcript(user_input)
-                        transcript_chunks = split_transcript(current_transcript)
-                        if len(transcript_chunks) > 1:
-                            print(bold(green("New TED talk transcript loaded and split into chunks due to its length. You can now ask questions about this talk.")))
-                        else:
-                            print(bold(green("New TED talk transcript loaded. You can now ask questions about this talk.")))
-                        messages = []  # Reset conversation history for new talk
-                    except Exception as e:
-                        print(red(f"Error loading TED talk transcript: {str(e)}"))
-                        continue
+                if user_input.lower() == 'list':
+                    print("\nAvailable TED Talks:")
+                    for talk in all_talks:
+                        print(talk)
+                    continue
+
+                if user_input.lower() == 'recommend':
+                    recommended_talk = recommend_ted_talk(user_interests, all_talks)
+                    print(green(f"\nRecommended TED Talk: {recommended_talk}"))
+                    current_talk = recommended_talk
+                    messages = []  # Reset conversation for new talk
+                    continue
+
+                if user_input in all_talks:
+                    current_talk = user_input
+                    print(green(f"\nSwitched to TED talk: {current_talk}"))
+                    messages = []  # Reset conversation for new talk
+                    continue
+                
+                # Process user input and get AI response
+                messages.append({"role": "user", "content": user_input})
+                
+                full_query = f"Based on the TED talk '{current_talk}', please respond to: {user_input}"
+                response = chat_with_ai(messages + [{"role": "user", "content": full_query}], personality, ai_model, current_talk)
+                
+                print(bold(red("\nAssistant: ")) + apply_markdown_styling(response))
+                
+                messages.append({"role": "assistant", "content": response})
+
+                # Check for markdown content in the response
+                markdown_content = extract_markdown(response)
+                if markdown_content:
+                    title_prompt = f"Generate a brief, concise title (5 words or less) for this content:\n\n{markdown_content[:200]}..."
+                    title_response = chat_with_ai([{"role": "user", "content": title_prompt}], "concise", ai_model, current_talk)
+                    
+                    file_path = generate_markdown_file(markdown_content, title_response)
+                    print(green(f"\nMarkdown file generated: {file_path}\n"))
                 else:
-                    if not current_transcript:
-                        print(red("Please load a TED talk first by pasting its URL."))
-                        continue
-                    
-                    messages.append({"role": "user", "content": user_input})
-                    
-                    full_query = f"Based on this transcript and our conversation so far, please respond to the latest message: {user_input}\n\nTranscript:\n{current_transcript}"
-                    response = chat_with_ai(messages + [{"role": "user", "content": full_query}], personality, ai_model, current_ted_talk_url)
-                    
-                    print(bold(red("\nAssistant: ")) + apply_markdown_styling(response))
-                    
-                    messages.append({"role": "assistant", "content": response})
+                    print(blue("\nNo Markdown content detected in this response.\n"))
 
-                    markdown_content = extract_markdown(response)
-                    if markdown_content:
-                        title_prompt = f"Generate a brief, concise title (5 words or less) for this content:\n\n{markdown_content[:200]}..."
-                        title_response = chat_with_ai([{"role": "user", "content": title_prompt}], "concise", ai_model, current_ted_talk_url)
-                        
-                        file_path = generate_markdown_file(markdown_content, title_response, current_ted_talk_url)
-                        print(green(f"\nMarkdown file generated: {file_path}\n"))
-                    else:
-                        print(blue("\nNo Markdown content detected in this response.\n"))
-
-        except KeyboardInterrupt:
+        except KeyboardInterrupt:  # Handle Ctrl+C to exit the program
             os.system('clear')
             print("\nExiting...")
             time.sleep(1.75)
             os.system('clear')
             sys.exit()
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # Run the main function if the script is executed directly
     main()
