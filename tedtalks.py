@@ -22,7 +22,7 @@ import tiktoken # for tokenizing text
 import argparse # for command-line arguments
 
 # ------------------------------------------------------------------------------
-# tedbriefs.py 🟣 -------------------------------------------------------
+# tedbriefs.py 🟣 --------------------------------------------------------------
 # -------------------------------------initialisation---------------------------
 
 # Load environment variables from .env file
