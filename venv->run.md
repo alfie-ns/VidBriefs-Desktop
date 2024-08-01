@@ -7,10 +7,9 @@
 5. Now, run: **source venv/bin/activate**
 6. If previous commands ran correctly, you are now in a dependency virtual environment, now run **./install-requirements.sh**
 
-./youtube.py - script to load and talk about Youtube videos
-./tedtalks.py - script to reccomend and talk about Ted Talks
+**./youtube.py** - script to load and talk about Youtube videos
+**./tedtalks.py** - script to reccomend and talk about Ted Talks
 ...
-./categorise.py - process to organise markdown files into categories
---------------------------------------------------------------------
+**./categorise.py** - process to organise markdown files into categories
 
 run script: ./{file-name}.py
