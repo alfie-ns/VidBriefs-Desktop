@@ -10,10 +10,11 @@ from dotenv import load_dotenv # for loading environment variables from .env fil
 from openai import OpenAI
 import anthropic
 
-# --------------YouTube Transcripts----------------
+# --------------TED Talk Data----------------
 
-from youtube_transcript_api import YouTubeTranscriptApi
-from urllib.parse import urlparse, parse_qs
+import pandas as pd # for reading CSV files
+import requests # for making HTTP requests
+from bs4 import BeautifulSoup # for parsing HTML
 
 # --------------formatting dependencies----------------
 
@@ -23,18 +24,17 @@ import tiktoken # for tokenizing text
 import argparse # for command-line arguments
 
 # ------------------------------------------------------------------------------
-# vidbriefs-desktop.py 🟣 -------------------------------------------------------
+# tedbriefs.py 🟣 --------------------------------------------------------------
 # -------------------------------------initialisation---------------------------
 
 # Load environment variables from .env file
 load_dotenv()
 
-# Get OpenAI API key from environment variables
+# Get API keys from environment variables
 openai_api_key = os.getenv("OPENAI_API_KEY")
 claude_api_key = os.getenv("ANTHROPIC_API_KEY")
-# || api_key = "sk-...""
 
-# Initialise OpenAI client
+# Initialise AI clients
 openai_client = OpenAI(api_key=openai_api_key)
 claude_client = anthropic.Anthropic(api_key=claude_api_key)
 
@@ -45,7 +45,6 @@ claude_client = anthropic.Anthropic(api_key=claude_api_key)
 # Check if running in a terminal that supports formatting
 def supports_formatting():
     return sys.stdout.isatty()
-           #sys.stdout.isatty() returns True if the file descriptor
 
 # Formatting functions --------------------------------------------------------
 def format_text(text, format_code):
@@ -70,18 +69,15 @@ def green(text):
 # --------------------------------------------------------------------------------
 
 # AI Communication Functions -----------------------------------------------------
-def chat_with_ai(messages, personality, ai_model, youtube_link):
+def chat_with_ai(messages, personality, ai_model, ted_talk_url):
     system_message = f"You are a helpful assistant with a {personality} personality."
-    instruction = f"You will assist the user with their question about the video and generate markdown files. When referencing the video, always use this exact link: {youtube_link}. Do not generate or use any placeholder or example links."
+    instruction = f"You will assist the user with their question about the TED talk and generate markdown files. When referencing the talk, always use this exact link: {ted_talk_url}. Do not generate or use any placeholder or example links."
     
-    
-    # [ ] Create functionality to give user option for how much tokens to use
-
     if ai_model == "gpt":
-        try: # try to communicate with GPT-4o-mini
+        try:
             messages.insert(0, {"role": "system", "content": system_message, "role": "system", "content": instruction})
             response = openai_client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-4",
                 messages=messages
             )
             return response.choices[0].message.content
@@ -93,8 +89,8 @@ def chat_with_ai(messages, personality, ai_model, youtube_link):
                 {"role": "user", "content": messages[-1]['content']}
             ]
             response = claude_client.messages.create(
-                model="claude-3-sonnet-20240229",
-                max_tokens=450,
+                model="claude-3-opus-20240229",
+                max_tokens=1000,
                 system=system_message,
                 messages=claude_messages
             )
@@ -150,24 +146,18 @@ def split_transcript(transcript, max_tokens=125000):
 
     return chunks
 
-def get_transcript(url):
-    '''
-        Extract video ID from YouTube URL:
-        For youtu.be links: use the last part of the URL after '/'
-        For full URLs: parse query string and get 'v' parameter
-        Falls back to None if 'v' parameter is not found
-    '''
-    video_id = url.split('/')[-1] if 'youtu.be' in url else parse_qs(urlparse(url).query).get('v', [None])[0]
-
-
-    # url_split splits the URL by '/' and takes the last part, which is the video ID.
-    # if url is a youtu.be link, it takes the last part of the URL.
-    if not video_id:
-        raise ValueError("No video ID found in URL")
+def get_ted_transcript(url):
+    """Fetch and return the transcript of a TED talk given its URL."""
+    response = requests.get(url)
+    soup = BeautifulSoup(response.content, 'html.parser')
+    transcript_div = soup.find('div', class_='transcript__inner')
     
-    transcript = YouTubeTranscriptApi.get_transcript(video_id) # Get the transcript for the video
-    sentences = [entry['text'] for entry in transcript] # Extract the text into a list of sentences
-    return " ".join(sentences) # Join the sentences into a single string
+    if not transcript_div:
+        raise ValueError("Transcript not found on the page.")
+    
+    paragraphs = transcript_div.find_all('p')
+    transcript = ' '.join([p.text for p in paragraphs])
+    return transcript
 
 # Text Styling and Markdown Functions ------------------------------------------------
 def apply_markdown_styling(text):
@@ -205,8 +195,8 @@ def slugify(text):
     text = re.sub(r'\s+', '-', text)
     return text
 
-def generate_markdown_file(content, title, youtube_link):
-    """Generate a Markdown file with the given content, title, and YouTube link in a 'Markdown' folder."""
+def generate_markdown_file(content, title, ted_talk_url):
+    """Generate a Markdown file with the given content, title, and TED talk link in a 'Markdown' folder."""
     if not title or title.strip() == "":
         title = "Untitled Document"
     
@@ -230,7 +220,7 @@ def generate_markdown_file(content, title, youtube_link):
     with open(file_path, 'w') as f:
         f.write(f"# {title}\n\n")
         f.write(content)
-        f.write(f"\n\n---\n\n[Link to Video]({youtube_link})")
+        f.write(f"\n\n---\n\n[Link to TED Talk]({ted_talk_url})")
     
     return file_path
 
@@ -241,131 +231,104 @@ def main():
     while True:  # Outer loop for restart 'break' functionality
         os.system('clear')
         # ----------------- Main Program -----------------
-        print(bold(blue("\nYoutube Transcript AI Assistant\n")))
+        print(bold(blue("\nTED Talk Transcript AI Assistant\n")))
         
-        ai_model = input(bold("Choose your AI model (gpt/claude): ")).strip().lower() # Ask user to choose AI model, strip whitespace and convert to lowercase
+        ai_model = input(bold("Choose your AI model (gpt/claude): ")).strip().lower()
         while ai_model not in ["gpt", "claude"]:
             print(red("Invalid choice. Please enter 'gpt' or 'claude'."))
             ai_model = input(bold("Choose your AI model (gpt/claude): ")).strip().lower()
 
         # Personalise assistant ------------------------------------------------
+        personality_choice = input(bold(textwrap.dedent("""
+            How would you like to personalise the assistant?
+            (Feel free to describe the personality in your own words, or use the suggestions below)
 
-        # dedent() removes leading whitespace from the text, thus allowing cleaner formatting
-        personality_choice = input(bold(textwrap.dedent(""" 
-        How would you like to personalise the assistant?
-        (Feel free to describe the personality in your own words, or use the suggestions below)
+            Learning Style Examples:
+            - 🧠 ANALYTICAL: "HIGH 🧠 ANALYTICAL with MEDIUM 🔬 TECHNICAL focus"
+            - 🎨 CREATIVE: "MEDIUM 🎨 CREATIVE with LOW 🌈 VISUAL emphasis"
+            - 🗣️ PERSUASIVE: "BALANCED 🗣️ PERSUASIVE-🧠 LOGICAL approach"
+            - 🌐 MULTIDISCIPLINARY: "HIGH 🌐 MULTIDISCIPLINARY with MEDIUM 🔗 CONTEXTUALIZING"
+            - 📚 ACADEMIC: "HIGH 📚 ACADEMIC with LOW 🧪 EXPERIMENTAL style"
+            - 🤔 SOCRATIC: "MEDIUM 🤔 SOCRATIC with HIGH 🔍 QUESTIONING focus"
+            - 🤝 EMPATHETIC: "HIGH 🤝 EMPATHETIC with MEDIUM 👥 COLLABORATIVE approach"
+            - 💡 INNOVATIVE: "BALANCED 💡 INNOVATIVE-🔬 TECHNICAL style"
+            - 📊 DATA-DRIVEN: "HIGH 📊 DATA-DRIVEN with LOW 🖼️ CONCEPTUAL emphasis"
+            - 🧩 PROBLEM-SOLVING: "MEDIUM 🧩 PROBLEM-SOLVING with HIGH 🔀 ADAPTIVE focus"
 
-        You can specify intensity levels (LOW, MEDIUM, HIGH) and combine traits as you wish.
-        
-        Examples: ----------------------------------------------------------------
-        - 'FRIENDLY and HELPFUL with a touch of HUMOR'
-        - 'PROFESSIONAL and INFORMATIVE with a hint of SARCASM'
-        - 'CASUAL and ENGAGING with a focus on PRACTICALITY' 
-        - Logical teacher                                                                                                    
-        - 'HIGH summarizer and MEDIUM explainer'
-        - 'LOW questioner with HIGH practical focus'
-        - 'MEDIUM friendly and HIGH professional'
-        - 'mentor with a focus on practical applications'
+            Combine these or create your own to define the AI's learning style and personality.
+            Remember, you can specify intensity levels (LOW, MEDIUM, HIGH, BALANCED) and combine traits.
 
-        Learning trait suggestions (feel free to use your own):
-        ---------------------------------------------------------------------------
-        Communication:
-        - informative    - engaging       - persuasive     - critical
-        - concise        - analytical     - descriptive    - eloquent
+            Your choice: """)))
 
-        Style:
-        - creative       - technical      - casual         - formal
-        - friendly       - professional   - humorous       - serious
-
-        Approach:
-        - teaching       - mentoring      - motivational   - skeptical
-        - empathetic     - logical        - practical      - academic
-
-        Focus:
-        - summarizing    - explaining     - contextualizing - questioning
-        - comparing      - historical     - visual         - socratic
-        - analogical     - fact-checking  - multidisciplinary
-        ----------------------------------------------------------------------------
-
-        (BE AS CREATIVE AS YOU LIKE TO ENSURE OPTIMAL LEARNING EFFICACY) 
-        
-        Your choice:                                                       
-                                                        
-        """)))
-
-        personality = personality_choice or "friendly and helpful" # Default personality
+        personality = personality_choice or "BALANCED 🧠 ANALYTICAL-🎨 CREATIVE with HIGH 🌐 MULTIDISCIPLINARY focus. MEDIUM 🗣️ PERSUASIVE with LOW 🤔 SOCRATIC questioning. HIGH 📊 DATA-DRIVEN and MEDIUM 🤝 EMPATHETIC approach."
 
         print(f"\nGreat! Your {ai_model.upper()} assistant will be", bold(personality))
-        print("Paste a YouTube URL to start chatting about videos of your interest.")
+        print("Paste a TED talk URL to start chatting about the talk.")
         print("Type 'exit' to quit the program or 'restart' to start over.")
 
-        messages = [] # init as empty list
-        current_transcript = "" # init as empty string
-        transcript_chunks = [] # init as empty list
+        messages = []
+        current_transcript = ""
+        transcript_chunks = []
 
-        try: # Inner loop for conversation functionality
-            current_youtube_link = ""  # Initialise YouTube link variable
+        try:
+            current_ted_talk_url = ""
             while True:
-                user_input = input(bold("\nEnter a YouTube URL, your message, 'restart', or 'exit': ")).strip()
+                user_input = input(bold("\nEnter a TED talk URL, your message, 'restart', or 'exit': ")).strip()
 
                 if user_input.lower() == 'exit':
                     os.system('clear')
                     print("\nExiting...")
                     time.sleep(1.5)
                     os.system('clear')
-                    sys.exit() 
+                    sys.exit()
 
                 if user_input.lower() == "restart":
                     print(bold(green("Restarting the assistant...")))
                     break  # Break the inner loop to restart
 
-                if 'youtube.com' in user_input or 'youtu.be' in user_input:
-                    current_youtube_link = user_input  # Store the YouTube link
+                if 'ted.com/talks' in user_input:
+                    current_ted_talk_url = user_input
                     try:
-                        current_transcript = get_transcript(user_input)
+                        current_transcript = get_ted_transcript(user_input)
                         transcript_chunks = split_transcript(current_transcript)
                         if len(transcript_chunks) > 1:
-                            print(bold(green("New video transcript loaded and split into chunks due to its length. You can now ask questions about this video.")))
+                            print(bold(green("New TED talk transcript loaded and split into chunks due to its length. You can now ask questions about this talk.")))
                         else:
-                            print(bold(green("New video transcript loaded. You can now ask questions about this video.")))
-                        messages = []  # Reset conversation history for new video
+                            print(bold(green("New TED talk transcript loaded. You can now ask questions about this talk.")))
+                        messages = []  # Reset conversation history for new talk
                     except Exception as e:
-                        print(red(f"Error loading video transcript: {str(e)}"))
+                        print(red(f"Error loading TED talk transcript: {str(e)}"))
                         continue
                 else:
                     if not current_transcript:
-                        print(red("Please load a YouTube video first by pasting its URL."))
+                        print(red("Please load a TED talk first by pasting its URL."))
                         continue
                     
-                    # Add user message to conversation history
                     messages.append({"role": "user", "content": user_input})
                     
-                    # Process the transcript with the entire conversation history
                     full_query = f"Based on this transcript and our conversation so far, please respond to the latest message: {user_input}\n\nTranscript:\n{current_transcript}"
-                    response = chat_with_ai(messages + [{"role": "user", "content": full_query}], personality, ai_model, current_youtube_link)
+                    response = chat_with_ai(messages + [{"role": "user", "content": full_query}], personality, ai_model, current_ted_talk_url)
                     
                     print(bold(red("\nAssistant: ")) + apply_markdown_styling(response))
                     
-                    # Add assistant's response to conversation history
                     messages.append({"role": "assistant", "content": response})
 
-                    # Check for markdown content in the response
                     markdown_content = extract_markdown(response)
                     if markdown_content:
                         title_prompt = f"Generate a brief, concise title (5 words or less) for this content:\n\n{markdown_content[:200]}..."
-                        title_response = chat_with_ai([{"role": "user", "content": title_prompt}], "concise", ai_model, current_youtube_link)
+                        title_response = chat_with_ai([{"role": "user", "content": title_prompt}], "concise", ai_model, current_ted_talk_url)
                         
-                        file_path = generate_markdown_file(markdown_content, title_response, current_youtube_link)  # Pass the current YouTube link
+                        file_path = generate_markdown_file(markdown_content, title_response, current_ted_talk_url)
                         print(green(f"\nMarkdown file generated: {file_path}\n"))
                     else:
                         print(blue("\nNo Markdown content detected in this response.\n"))
 
-        except KeyboardInterrupt: # Handle Ctrl+C to exit the program
+        except KeyboardInterrupt:
             os.system('clear')
             print("\nExiting...")
             time.sleep(1.75)
             os.system('clear')
             sys.exit()
 
-if __name__ == "__main__": # Run the main function if the script is executed in any way other than being imported as a module
+if __name__ == "__main__":
     main()
