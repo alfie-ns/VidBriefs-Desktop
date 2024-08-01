@@ -101,7 +101,8 @@ def chat_with_ai(messages, personality, ai_model, ted_talk_title):
         return "Invalid AI model selected."
 
 # TED Talk Processing Functions -------------------------------------------------
-def get_ted_talk_content(talk_title):
+
+def get_ted_talk_content(talk_title): # --Systematic Traversal--
     """Fetch and return the content of a TED talk given its title."""
     for root, dirs, files in os.walk("TED-talks"): # Recursively walk through the TED-talks directory
         for file in files: # For each file in the current directory
@@ -110,8 +111,9 @@ def get_ted_talk_content(talk_title):
                     return f.read() # Read and return the entire content of the file
     return "Talk content not found." # If no matching file is found, return this message
 
-def get_all_talk_titles():
-    """Get all available TED talk titles from the local directory."""
+def get_all_talk_titles(): # --Breadth-First Processing of Depth-First Traversal--
+    """Get all available TED talk titles from the local directory.
+    """
     titles = []
     for root, dirs, files in os.walk("TED-talks"):
         for file in files:
@@ -162,7 +164,7 @@ def slugify(text):
     text = re.sub(r'\s+', '-', text)
     return text
 
-def generate_markdown_file(content, title):
+def generate_markdown_file(content, title): # NEED TO GET WORKING
     """Generate a Markdown file with the given content and title in a 'Markdown' folder."""
     if not title or title.strip() == "":
         title = "Untitled Document"
