@@ -1,8 +1,0 @@
-
-
-(Applause)
-
-(Music)
-
-(Applause)
-
