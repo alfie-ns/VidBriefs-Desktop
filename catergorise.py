@@ -71,8 +71,8 @@ def main():
             print(f"Moved {file} to {CATEGORIES_DIR}/{category}")
         else:
             print(f"Category folder {CATEGORIES_DIR}/{category} does not exist. Keeping {file} in Markdown folder.")
-        time.sleep(1.75)
-        os.system('clear')
+    time.sleep(5.75)
+    os.system('clear')
 
 if __name__ == "__main__":
     main()
