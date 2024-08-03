@@ -313,7 +313,7 @@ def main():
                         print(red(f"Error loading video transcript: {str(e)}"))
                         continue
                 else:
-                    if not current_transcript:
+                    if not current_transcript: # If transcript hasnt been initially loaded prior to conversation 
                         print(red("Please load a YouTube video first by pasting its URL."))
                         continue
                     
@@ -322,7 +322,7 @@ def main():
                     
                     # Process the transcript with the entire conversation history
                     full_query = f"Based on this transcript and our conversation so far, please respond to the latest message: {user_input}\n\nTranscript:\n{current_transcript}"
-                    response = chat_with_ai(messages + [{"role": "user", "content": full_query}], personality, ai_model, current_youtube_link)
+                    response = chat_with_ai(messages + [{"role": "user", "content": full_query}], personality, ai_model, current_youtube_link) # response = 
                     
                     print(bold(red("\nAssistant: ")) + apply_markdown_styling(response))
                     
@@ -347,6 +347,5 @@ def main():
             os.system('clear')
             sys.exit()
 
-if __name__ == "__main__": # Run the main function if the script is executed in any way other than being imported as a module
+if __name__ == "__main__": # Run the main function if the script is executed directly, not when imported as a module
     main()
-# if this
