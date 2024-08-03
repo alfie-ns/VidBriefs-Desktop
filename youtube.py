@@ -45,7 +45,7 @@ claude_client = anthropic.Anthropic(api_key=claude_api_key)
 # Check if running in a terminal that supports formatting
 def supports_formatting():
     return sys.stdout.isatty()
-           #sys.stdout.isatty() returns True if the file descriptor
+           #sys.stdout.isatty() returns True if the file descriptor allows formatting
 
 # Formatting functions --------------------------------------------------------
 def format_text(text, format_code):
