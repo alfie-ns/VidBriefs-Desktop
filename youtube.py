@@ -235,7 +235,7 @@ def generate_markdown_file(content, title, youtube_link):
     return file_path
 
 # ------------------------------------------------------------------------------
-# Main 🟥 ---------------------------------------------------------------------
+# Main 🟥 -----------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 def main():
     while True:  # Outer loop for restart 'break' functionality
@@ -270,6 +270,10 @@ def main():
             Combine these or create your own to define the AI's learning style and personality.
             Remember, you can specify intensity levels (LOW, MEDIUM, HIGH, BALANCED) and combine
             traits.
+                                                        
+            BALANCED 🧠 ANALYTICAL-🎨 CREATIVE with HIGH 🌐 MULTIDISCIPLINARY focus.
+            MEDIUM 🗣️ PERSUASIVE with LOW 🤔 SOCRATIC questioning.                                             
+            HIGH 📊 DATA-DRIVEN and MEDIUM 🤝 EMPATHETIC approach
 
             Your choice: """)))
 

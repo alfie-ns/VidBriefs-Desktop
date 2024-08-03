@@ -71,7 +71,7 @@ def chat_with_ai(messages, personality, ai_model, ted_talk_title):
     system_message = f"You are a helpful assistant with a ({personality}) personality, you will provide the user markdown formatting for the users learning experience."
     instruction = f"You will assist the user regarding their questions about the TED talk titled '{ted_talk_title}'. Provide insightful analysis and relate the talk's content to real-world applications when appropriate."
     
-    if ai_model == "gpt": # if user chooses gpt-4o-mini
+    if ai_model == "gpt": # if user chooses gpt-4o-minia
         try:
             messages.insert(0, {"role": "system", "content": system_message + " " + instruction})
             response = openai_client.chat.completions.create(
