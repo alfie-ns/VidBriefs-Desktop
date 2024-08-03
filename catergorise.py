@@ -41,7 +41,7 @@ def categorise_with_ai(content):
 # File Processing Functions --------------------------------------------------
 def get_markdown_files():
     """Get all Markdown files in the Markdown directory."""
-    return [f for f in os.listdir(MARKDOWN_DIR) if f.endswith('.md')]
+    return [f for f in os.listdir(MARKDOWN_DIR) if f.endswith('.md')] # If file in markdown ends with .md, include​​​​​​​​​​​​​​​​
 
 def read_markdown_content(file_path):
     """Read the content of a Markdown file."""
