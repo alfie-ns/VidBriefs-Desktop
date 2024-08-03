@@ -25,7 +25,7 @@ def categorise_with_ai(content):
     
     try:
         response = client.chat.completions.create(
-            model="gpt-4o-mini",  # You can change this to a different model if needed
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant that categorises content."},
                 {"role": "user", "content": prompt}
