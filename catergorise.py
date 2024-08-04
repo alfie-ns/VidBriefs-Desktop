@@ -25,6 +25,8 @@ CATEGORIES = [
     "Technology",
     "Politics & Current Events",
     "Economics & Finance",
+    "History",
+    "Investing",
     "Military & Defense",
     "Entertainment",
     "Science",
@@ -94,7 +96,7 @@ def main():
         else:
             print(f"Category folder {CATEGORIES_DIR}/{category} does not exist. Keeping {file} in Markdown folder.")
     time.sleep(5.75)
-    os.system('clear')
+    #os.system('clear')
 
 if __name__ == "__main__":
     main()
