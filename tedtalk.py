@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*- 
 
 # Dependencies ------------------------------------------------------------------
-import sys, os, re, time, random # system operations, regular expressions, time, and random selection
+import sys, os, re, time, random, textwrap # system operations, regular expressions, time, and random selection
 from dotenv import load_dotenv # for loading environment variables from .env file
 
 # --------------AI APIS----------------
@@ -132,11 +132,23 @@ def get_all_talk_titles(): # --Breadth-First Processing of Depth-First Traversal
                 titles.append(file[:-3])  # Remove .md extension
     return titles
 
-def recommend_ted_talk(user_interests, all_talks): # ???
-    """Recommend a TED talk based on user interests."""
+def recommend_ted_talks(user_interests, all_talks, num_recommendations=3):
+    """Recommend multiple TED talks based on user interests or randomly."""
+    if not user_interests or user_interests == ['']:
+        # If no interests provided, return random recommendations
+        return random.sample(all_talks, min(num_recommendations, len(all_talks)))
+    
     relevant_talks = [talk for talk in all_talks if any(interest.lower() in talk.lower() for interest in user_interests)]
-    return random.choice(relevant_talks) if relevant_talks else random.choice(all_talks)
-
+    
+    if len(relevant_talks) >= num_recommendations:
+        return random.sample(relevant_talks, num_recommendations)
+    else:
+        # If not enough relevant talks, fill the rest with random talks
+        recommendations = relevant_talks.copy()
+        remaining_talks = [talk for talk in all_talks if talk not in relevant_talks]
+        recommendations.extend(random.sample(remaining_talks, num_recommendations - len(relevant_talks)))
+        return recommendations
+    
 # Text Styling and Markdown Functions ------------------------------------------------
 def apply_markdown_styling(text):
     """
@@ -207,11 +219,10 @@ def generate_markdown_file(content, title): # NEED TO GET WORKING
 # Main 🟥 ---------------------------------------------------------------------- 
 # ------------------------------------------------------------------------------
 def main():
-    all_talks = get_all_talk_titles() # function to list ALL talks in TED-talks
+    all_talks = get_all_talk_titles()
 
-    while True:  # Outer loop for restart 'break' functionality
+    while True:  # Outer loop for restart functionality
         os.system('clear')
-        # ----------------- Main Program -----------------
         print(bold(blue("\nTED Talk Analysis Assistant\n")))
         
         ai_model = input(bold("Choose your AI model (gpt/claude): ")).strip().lower()
@@ -219,7 +230,7 @@ def main():
             print(red("Invalid choice. Please enter 'gpt' or 'claude'."))
             ai_model = input(bold("Choose your AI model (gpt/claude): ")).strip().lower()
 
-        # Personalise assistant ------------------------------------------------
+        # Personalise assistant with detailed prompt
         personality_choice = input(bold(textwrap.dedent("""
             How would you like to personalise the assistant?
             (Feel free to describe the personality in your own words, or use the suggestions below)
@@ -245,15 +256,18 @@ def main():
 
         print(f"\nGreat! Your {ai_model.upper()} assistant will be", bold(personality))
         
-        user_interests = input(bold("Enter your interests (comma-separated) for TED talk recommendations: ")).split(',')
-        recommended_talk = recommend_ted_talk(user_interests, all_talks)
-        print(green(f"\nRecommended TED Talk: {recommended_talk}"))
-        print("You can start discussing this talk or choose another one.")
-        print("Type 'list' to see all available talks, 'recommend' for a new recommendation,")
+        user_interests = input(bold("Enter your interests (comma-separated) for TED talk recommendations, or press Enter for random recommendations: ")).split(',')
+        recommended_talks = recommend_ted_talks(user_interests, all_talks)
+        print(green("\nRecommended TED Talks:"))
+        for i, talk in enumerate(recommended_talks, 1):
+            print(f"{i}. {talk}")
+        
+        print("\nYou can start discussing any of these talks or choose another one.")
+        print("Type 'list' to see all available talks, 'recommend' for new recommendations,")
         print("'exit' to quit the program, or 'restart' to start over.")
 
         messages = []
-        current_talk = recommended_talk
+        current_talk = recommended_talks[0]  # Set the first recommendation as the current talk
 
         try:  # Inner loop for conversation functionality
             while True:
@@ -277,9 +291,11 @@ def main():
                     continue
 
                 if user_input.lower() == 'recommend':
-                    recommended_talk = recommend_ted_talk(user_interests, all_talks)
-                    print(green(f"\nRecommended TED Talk: {recommended_talk}"))
-                    current_talk = recommended_talk
+                    recommended_talks = recommend_ted_talks(user_interests, all_talks)
+                    print(green("\nRecommended TED Talks:"))
+                    for i, talk in enumerate(recommended_talks, 1):
+                        print(f"{i}. {talk}")
+                    current_talk = recommended_talks[0]
                     messages = []  # Reset conversation for new talk
                     continue
 
@@ -310,12 +326,12 @@ def main():
                 else:
                     print(blue("\nNo Markdown content detected in this response.\n"))
 
-        except KeyboardInterrupt:  # Handle Ctrl+C to exit the program
+        except KeyboardInterrupt:
             os.system('clear')
             print("\nExiting...")
             time.sleep(1.75)
             os.system('clear')
             sys.exit()
 
-if __name__ == "__main__":  # Run the main function if the script is executed directly
+if __name__ == "__main__":
     main()
