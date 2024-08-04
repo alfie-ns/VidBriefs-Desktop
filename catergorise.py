@@ -14,7 +14,29 @@ load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Constants
-CATEGORIES = ["CompSci", "Gaming", "Health", "Other", "Sports"]
+CATEGORIES = [
+    "CompSci", 
+    "AI & Machine Learning",
+    "Gaming",
+    "Health & Medicine",
+    "Fitness & Nutrition",
+    "Neuroscience",
+    "Sports",
+    "Technology",
+    "Politics & Current Events",
+    "Economics & Finance",
+    "Military & Defense",
+    "Entertainment",
+    "Science",
+    "Mental Health",
+    "Cybersecurity",
+    "Environmental Science",
+    "Social Issues",
+    "Business & Entrepreneurship",
+    "Education",
+    "Travel",
+    "Other"
+]
 MARKDOWN_DIR = "Markdown"
 CATEGORIES_DIR = "Categories"  # The directory containing all category folders
 
