@@ -133,12 +133,15 @@ def get_all_talk_titles(): # --Breadth-First Processing of Depth-First Traversal
     return titles
 
 def recommend_ted_talks(user_interests, all_talks, num_recommendations=3):
-    """Recommend multiple TED talks based on user interests or randomly."""
-    if not user_interests or user_interests == ['']:
-        # If no interests provided, return random recommendations
-        return random.sample(all_talks, min(num_recommendations, len(all_talks)))
+    """Recommend multiple TED talks based on user interests by examining talk content."""
+    relevant_talks = []
     
-    relevant_talks = [talk for talk in all_talks if any(interest.lower() in talk.lower() for interest in user_interests)]
+    for talk in all_talks:
+        content = get_ted_talk_content(talk)
+        
+        # Check if any user interest is present in the talk content
+        if any(interest.lower() in content.lower() for interest in user_interests):
+            relevant_talks.append(talk)
     
     if len(relevant_talks) >= num_recommendations:
         return random.sample(relevant_talks, num_recommendations)
@@ -148,7 +151,12 @@ def recommend_ted_talks(user_interests, all_talks, num_recommendations=3):
         remaining_talks = [talk for talk in all_talks if talk not in relevant_talks]
         recommendations.extend(random.sample(remaining_talks, num_recommendations - len(relevant_talks)))
         return recommendations
-    
+
+# Helper function to get a preview of the talk content
+def get_talk_preview(talk_title, max_length=200):
+    content = get_ted_talk_content(talk_title)
+    return content[:max_length] + "..." if len(content) > max_length else content
+
 # Text Styling and Markdown Functions ------------------------------------------------
 def apply_markdown_styling(text):
     """
@@ -257,15 +265,24 @@ def main():
         print(f"\nGreat! Your {ai_model.upper()} assistant will be", bold(personality))
         
         user_interests = input(bold("Enter your interests (comma-separated) for TED talk recommendations, or press Enter for random recommendations: ")).split(',')
-        recommended_talks = recommend_ted_talks(user_interests, all_talks)
-        print(green("\nRecommended TED Talks:"))
+        user_interests = [interest.strip() for interest in user_interests if interest.strip()]  # Remove empty interests
+        
+        if user_interests:
+            recommended_talks = recommend_ted_talks(user_interests, all_talks)
+            print(green("\nRecommended TED Talks based on your interests:"))
+        else:
+            recommended_talks = random.sample(all_talks, min(3, len(all_talks)))
+            print(green("\nRandomly selected TED Talks:"))
+
         for i, talk in enumerate(recommended_talks, 1):
+            preview = get_talk_preview(talk)
             print(f"{i}. {talk}")
+            print(f"   Preview: {preview}\n")
         
         print("\nYou can start discussing any of these talks or choose another one.")
         print("Type 'list' to see all available talks, 'recommend' for new recommendations,")
         print("'exit' to quit the program, or 'restart' to start over.")
-
+        
         messages = []
         current_talk = recommended_talks[0]  # Set the first recommendation as the current talk
 

@@ -165,10 +165,10 @@ def split_transcript(transcript, max_tokens=125000):
 
 def get_transcript(url):
     '''
-        Extract video ID from YouTube URL:
-        For youtu.be links: use the last part of the URL after '/'
-        For full URLs: parse query string and get 'v' parameter
-        Falls back to None if 'v' parameter is not found
+    Extract video ID from YouTube URL:
+    For youtu.be links: use the last part of the URL after '/'
+    For full URLs: parse query string and get 'v' parameter
+    Falls back to None if 'v' parameter is not found
     '''
     video_id = url.split('/')[-1] if 'youtu.be' in url else parse_qs(urlparse(url).query).get('v', [None])[0]
 
@@ -248,7 +248,7 @@ def generate_markdown_file(content, title, youtube_link):
     return file_path
 
 # ------------------------------------------------------------------------------
-# Main 🟥 -----------------------------------------------------------------------
+# Main 🟥 ----------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 def main():
     while True:  # Outer loop for restart 'break' functionality
