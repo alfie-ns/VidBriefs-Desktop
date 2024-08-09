@@ -289,7 +289,9 @@ def main():
             HIGH 📊 DATA-DRIVEN and MEDIUM 🤝 EMPATHETIC approach
                                                         
             EXTENSIVE MARKDOWN FILE CREATOR  
-            EXTENSIVE TRAVERSAL OF ALL VIDEO INSIGHTS                                      
+            EXTENSIVE TRAVERSAL OF ALL VIDEO INSIGHTS
+
+            Teacher                                      
 
             Your choice: """)))
 
