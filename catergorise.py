@@ -75,18 +75,18 @@ def main():
     
     for file in markdown_files: # for each markdown file
         file_path = os.path.join(script_dir, MARKDOWN_DIR, file) # file path = 
-        content = read_markdown_content(file_path)
+        content = read_markdown_content(file_path) # read the content of the file
         
-        category = categorise_with_ai(content)
+        category = categorise_with_ai(content) # categorise file into respective category
         
         destination_folder = os.path.join(script_dir, CATEGORIES_DIR, category)
         destination_path = os.path.join(destination_folder, file)
         
         if not os.path.exists(destination_folder):
             os.makedirs(destination_folder)
-            print(f"Created category folder: {destination_folder}")
+            print(f"\nCreated category folder: {destination_folder}\n")
         
-        try:
+        try: # try to move into respective category, catch error and print if exception
             move_file(file_path, destination_path)
             print(f"Moved {file} to {os.path.relpath(destination_path, script_dir)}")
         except Exception as e:
