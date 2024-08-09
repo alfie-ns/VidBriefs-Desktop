@@ -5,7 +5,7 @@
 import sys, os, re, time # system operations, regular expressions, time
 from dotenv import load_dotenv # for loading environment variables from .env file
 
-# --------------AI APIS----------------
+# --------------AI APIS---------------- 
 
 from openai import OpenAI
 import anthropic
@@ -71,7 +71,20 @@ def green(text):
 
 # AI Communication Functions -----------------------------------------------------
 def chat_with_ai(messages, personality, ai_model, youtube_link):
-    system_message = f"You are a helpful assistant with a {personality} personality."
+    system_message = f"""You are a highly knowledgeable and articulate assistant with a {personality} personality.
+    Your primary goal is to provide comprehensive, well-structured, and educational responses.
+    
+    When responding:
+    1. Always provide detailed, multi-section responses with clear headings and subheadings.
+    2. Use markdown formatting to enhance readability (e.g., # for main headings, ## for subheadings, * for bullet points).
+    3. Include relevant examples, analogies, or case studies to illustrate complex concepts.
+    4. Summarize key points at the end of each major section.
+    5. Suggest practical applications or exercises for the user to reinforce their understanding.
+    6. When appropriate, include a "Further Reading" section with relevant resources.
+    7. Always reference the video using this exact link: {youtube_link}. Do not generate or use any placeholder or example links.
+    
+    Remember to maintain a balance between being informative and engaging, adapting your tone to match the {personality} style."""
+    
     instruction = f"You will assist the user with their question about the video and generate markdown files. When referencing the video, always use this exact link: {youtube_link}. Do not generate or use any placeholder or example links."
     
     
@@ -275,7 +288,8 @@ def main():
             MEDIUM 🗣️ PERSUASIVE with LOW 🤔 SOCRATIC questioning.                                             
             HIGH 📊 DATA-DRIVEN and MEDIUM 🤝 EMPATHETIC approach
                                                         
-            EXTENSIVE MARKDOWN FILE CREATOR                                        
+            EXTENSIVE MARKDOWN FILE CREATOR  
+            EXTENSIVE TRAVERSAL OF ALL VIDEO INSIGHTS                                      
 
             Your choice: """)))
 

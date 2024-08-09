@@ -1,4 +1,6 @@
-.env
 # trailing slash to indicate directory
 venv/ 
 *.DS_Store
+.env
+
+# ignore all ds store files recursively
