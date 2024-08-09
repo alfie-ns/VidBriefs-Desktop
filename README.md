@@ -31,4 +31,4 @@
 ...
 **./categorise.py** - process to organise markdown files into categories
 
-execute Python scripts with the respective shebang, e.g. **./youtube.py**
+execute Python scripts with using respective script's shebang, e.g. **./youtube.py**
