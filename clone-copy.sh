@@ -15,7 +15,7 @@ git clone "https://github.com/alfie-ns/vidbriefs-desktop" #$new_name"
 #cd "$new_name"
 cd vidbriefs-desktop
 
-# Copy the .env file
+# Copy the .env from parent directory into current directory
 cp ../.env .
 
 echo "Repository cloned as $new_name and .env file copied."
