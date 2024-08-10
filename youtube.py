@@ -71,22 +71,15 @@ def green(text):
 
 # AI Communication Functions -----------------------------------------------------
 def chat_with_ai(messages, personality, ai_model, youtube_link):
-    system_message = f"""You are a highly knowledgeable and articulate assistant with a {personality} personality.
-    Your primary goal is to provide comprehensive, well-structured, and educational responses.
-    
-    When responding:
-    1. Always provide detailed, multi-section responses with clear headings and subheadings.
-    2. Use markdown formatting to enhance readability (e.g., # for main headings, ## for subheadings, * for bullet points).
-    3. Include relevant examples, analogies, or case studies to illustrate complex concepts.
-    4. Summarize key points at the end of each major section.
-    5. Suggest practical applications or exercises for the user to reinforce their understanding.
-    6. When appropriate, include a "Further Reading" section with relevant resources.
-    7. Always reference the video using this exact link: {youtube_link}. Do not generate or use any placeholder or example links.
-    
-    Remember to maintain a balance between being informative and engaging, adapting your tone to match the {personality} style."""
+    system_message = f"""You are a {personality} AI analysing video content. Your task:
+
+    1. Provide markdown-formatted analysis with headers and bullet points.
+    2. Include examples and practical applications.
+    3. Always end with a "## Key Points Summary" section.
+    4. Reference the video: {youtube_link}
+    """
     
     instruction = f"You will assist the user with their question about the video and generate markdown files. When referencing the video, always use this exact link: {youtube_link}. Do not generate or use any placeholder or example links."
-    
     
     # [ ] Create functionality to give user option for how much tokens to use
 
@@ -252,7 +245,7 @@ def generate_markdown_file(content, title, youtube_link):
 # ------------------------------------------------------------------------------
 def main():
     while True:  # Outer loop for restart 'break' functionality
-        os.system('clear')
+        os.system('clear') # clear terminal screen
         # ----------------- Main Program -----------------
         print(bold(blue("\nYoutube Transcript AI Assistant\n")))
         
@@ -261,10 +254,10 @@ def main():
             print(red("Invalid choice. Please enter 'gpt' or 'claude'."))
             ai_model = input(bold("Choose your AI model (gpt/claude): ")).strip().lower()
 
-        # Personalise assistant ------------------------------------------------
+            # Personalise assistant ------------------------------------------------
 
-        # dedent() removes leading whitespace from the text, thus allowing cleaner formatting
-        personality_choice = input(bold(textwrap.dedent("""
+            # dedent() removes leading whitespace from the text, thus allowing cleaner formatting
+            personality_choice = input(bold(textwrap.dedent("""
             How would you like to personalise the assistant?
             (Feel free to describe the personality in your own words, or use the suggestions below)
 
@@ -297,7 +290,7 @@ def main():
 
         personality = personality_choice or "BALANCED 🧠 ANALYTICAL-🎨 CREATIVE with HIGH 🌐 MULTIDISCIPLINARY focus. MEDIUM 🗣️ PERSUASIVE with LOW 🤔 SOCRATIC questioning. HIGH 📊 DATA-DRIVEN and MEDIUM 🤝 EMPATHETIC approach."
 
-        print(f"\nGreat! Your {ai_model.upper()} assistant will be", bold(personality))
+        print(f"\nYour {ai_model.upper()} assistant will be:", bold(personality))
         print("Paste a YouTube URL to start chatting about videos of your interest.")
         print("Type 'exit' to quit the program or 'restart' to start over.")
 
