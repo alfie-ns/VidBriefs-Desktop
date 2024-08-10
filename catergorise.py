@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
-import shutil
+import os, shutil
 from openai import OpenAI
 from dotenv import load_dotenv
 
