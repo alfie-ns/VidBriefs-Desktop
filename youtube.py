@@ -250,44 +250,40 @@ def main():
         print(bold(blue("\nYoutube Transcript AI Assistant\n")))
         
         ai_model = input(bold("Choose your AI model (gpt/claude): ")).strip().lower() # Ask user to choose AI model, strip whitespace and convert to lowercase
-        while ai_model not in ["gpt", "claude"]: # While ai not in the ...
+        while ai_model not in ["gpt", "claude"]: # ?
             print(red("Invalid choice. Please enter 'gpt' or 'claude'."))
             ai_model = input(bold("Choose your AI model (gpt/claude): ")).strip().lower()
 
-            # Personalise assistant ------------------------------------------------
+        # Personalise assistant ------------------------------------------------
 
-            # dedent() removes leading whitespace from the text, thus allowing cleaner formatting
-            personality_choice = input(bold(textwrap.dedent("""
-            How would you like to personalise the assistant?
-            (Feel free to describe the personality in your own words, or use the suggestions below)
-
-            Learning Style Examples:
-            - 🧠 ANALYTICAL: "HIGH 🧠 ANALYTICAL with MEDIUM 🔬 TECHNICAL focus"
-            - 🎨 CREATIVE: "MEDIUM 🎨 CREATIVE with LOW 🌈 VISUAL emphasis"
-            - 🗣️ PERSUASIVE: "BALANCED 🗣️ PERSUASIVE-🧠 LOGICAL approach"
-            - 🌐 MULTIDISCIPLINARY: "HIGH 🌐 MULTIDISCIPLINARY with MEDIUM 🔗 CONTEXTUALIZING"
-            - 📚 ACADEMIC: "HIGH 📚 ACADEMIC with LOW 🧪 EXPERIMENTAL style"
-            - 🤔 SOCRATIC: "MEDIUM 🤔 SOCRATIC with HIGH 🔍 QUESTIONING focus"
-            - 🤝 EMPATHETIC: "HIGH 🤝 EMPATHETIC with MEDIUM 👥 COLLABORATIVE approach"
-            - 💡 INNOVATIVE: "BALANCED 💡 INNOVATIVE-🔬 TECHNICAL style"
-            - 📊 DATA-DRIVEN: "HIGH 📊 DATA-DRIVEN with LOW 🖼️ CONCEPTUAL emphasis"
-            - 🧩 PROBLEM-SOLVING: "MEDIUM 🧩 PROBLEM-SOLVING with HIGH 🔀 ADAPTIVE focus"
-
-            Combine these or create your own to define the AI's learning style and personality.
-            Remember, you can specify intensity levels (LOW, MEDIUM, HIGH, BALANCED) and combine
-            traits.
-                                                        
-            BALANCED 🧠 ANALYTICAL-🎨 CREATIVE with HIGH 🌐 MULTIDISCIPLINARY focus.
-            MEDIUM 🗣️ PERSUASIVE with LOW 🤔 SOCRATIC questioning.                                             
-            HIGH 📊 DATA-DRIVEN and MEDIUM 🤝 EMPATHETIC approach
-                                                        
-            EXTENSIVE MARKDOWN FILE CREATOR  
-            EXTENSIVE TRAVERSAL OF ALL VIDEO INSIGHTS
-
-            Teacher                                      
-
-            Your choice: """)))
-
+        # dedent() removes leading whitespace from the text, thus allowing cleaner formatting
+        personality_choice = input(bold(textwrap.dedent("""
+        How would you like to personalise the assistant?
+        (Feel free to describe the personality in your own words, or use the suggestions below)
+        Learning Style Examples:
+        - 🧠 ANALYTICAL: "HIGH 🧠 ANALYTICAL with MEDIUM 🔬 TECHNICAL focus"
+        - 🎨 CREATIVE: "MEDIUM 🎨 CREATIVE with LOW 🌈 VISUAL emphasis"
+        - 🗣️ PERSUASIVE: "BALANCED 🗣️ PERSUASIVE-🧠 LOGICAL approach"
+        - 🌐 MULTIDISCIPLINARY: "HIGH 🌐 MULTIDISCIPLINARY with MEDIUM 🔗 CONTEXTUALIZING"
+        - 📚 ACADEMIC: "HIGH 📚 ACADEMIC with LOW 🧪 EXPERIMENTAL style"
+        - 🤔 SOCRATIC: "MEDIUM 🤔 SOCRATIC with HIGH 🔍 QUESTIONING focus"
+        - 🤝 EMPATHETIC: "HIGH 🤝 EMPATHETIC with MEDIUM 👥 COLLABORATIVE approach"
+        - 💡 INNOVATIVE: "BALANCED 💡 INNOVATIVE-🔬 TECHNICAL style"
+        - 📊 DATA-DRIVEN: "HIGH 📊 DATA-DRIVEN with LOW 🖼️ CONCEPTUAL emphasis"
+        - 🧩 PROBLEM-SOLVING: "MEDIUM 🧩 PROBLEM-SOLVING with HIGH 🔀 ADAPTIVE focus"
+        Combine these or create your own to define the AI's learning style and personality.
+        Remember, you can specify intensity levels (LOW, MEDIUM, HIGH, BALANCED) and combine
+        traits.
+                                                    
+        BALANCED 🧠 ANALYTICAL-🎨 CREATIVE with HIGH 🌐 MULTIDISCIPLINARY focus.
+        MEDIUM 🗣️ PERSUASIVE with LOW 🤔 SOCRATIC questioning.                                             
+        HIGH 📊 DATA-DRIVEN and MEDIUM 🤝 EMPATHETIC approach
+                                                    
+        EXTENSIVE MARKDOWN FILE CREATOR  
+        EXTENSIVE TRAVERSAL OF ALL VIDEO INSIGHTS
+        Teacher                                      
+        Your choice: """)))
+        
         personality = personality_choice or "BALANCED 🧠 ANALYTICAL-🎨 CREATIVE with HIGH 🌐 MULTIDISCIPLINARY focus. MEDIUM 🗣️ PERSUASIVE with LOW 🤔 SOCRATIC questioning. HIGH 📊 DATA-DRIVEN and MEDIUM 🤝 EMPATHETIC approach."
 
         print(f"\nYour {ai_model.upper()} assistant will be:", bold(personality))
