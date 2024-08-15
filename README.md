@@ -4,7 +4,7 @@
 
 ---
 
-2. Create environment to hold API key:  run create-env.sh bash script in root directory
+2. Create environment to hold API key:  run scripts/create-env.sh bash script in root directory
 
 ---
 
