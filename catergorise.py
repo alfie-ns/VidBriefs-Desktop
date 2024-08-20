@@ -14,7 +14,9 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 # Constants
 CATEGORIES = [
     "CompSci", 
+    "Sleep",
     "AI & Machine Learning",
+    "BrainHealth",
     "Gaming",
     "Health & Medicine",
     "Fitness & Nutrition",
@@ -41,7 +43,7 @@ MARKDOWN_DIR = "Markdown"
 CATEGORIES_DIR = "Categories"
 
 def categorise_with_ai(content):
-    prompt = f"Categorize the following content into one of these categories: {', '.join(CATEGORIES)}. Respond with just the category name.\n\nContent: {content[:500]}..."
+    prompt = f"Categorise the following content into one of these categories: {', '.join(CATEGORIES)}. Respond with just the category name.\n\nContent: {content[:500]}..."
     
     try:
         response = client.chat.completions.create(
