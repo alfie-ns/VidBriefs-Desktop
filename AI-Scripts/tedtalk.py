@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*- 
 
+# VidBriefs-Desktop/AI-Scripts/tedbriefs.py
+
 # Dependencies ------------------------------------------------------------------
 import sys, os, re, time, random, textwrap # system operations, regular expressions, time, and random selection
 from dotenv import load_dotenv # for loading environment variables from .env file

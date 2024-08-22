@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# VidBriefs-Desktop/AI-Scripts/chatbot.py
+
 # Dependencies ------------------------------------------------------------------
 import sys
 import os

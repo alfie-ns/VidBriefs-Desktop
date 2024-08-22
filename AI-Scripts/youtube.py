@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*- 
 
+# VidBriefs-Desktop/AI-Scripts/youtube.py
+
 # Dependencies ------------------------------------------------------------------
 import sys, os, re, time # system operations, regular expressions, time
 from dotenv import load_dotenv # for loading environment variables from .env file
