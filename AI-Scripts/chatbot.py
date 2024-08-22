@@ -77,7 +77,7 @@ def browse_website(url):
 def chat_with_ai(messages, personality, ai_model, allow_web_search=False, allow_analysis=False):
     system_message = f"You are a {personality} AI assistant. Provide helpful and engaging responses. Use markdown formatting when appropriate."
     if allow_web_search:
-        system_message += " You have the ability to search the web for information when needed. When you receive web content, analyze and summarize it concisely."
+        system_message += " You have the ability to search the web for information when needed. When asked about current events or recent information, use your web browsing capability to provide up-to-date information. When you receive web content, analyze and summarize it concisely."
     if allow_analysis:
         system_message += " You can analyze and interpret code when requested."
     
@@ -108,7 +108,7 @@ def chat_with_ai(messages, personality, ai_model, allow_web_search=False, allow_
         return "Invalid AI model selected."
     
 def generate_markdown_file(content, title):
-    folder_name = "ChatbotMarkdown"
+    folder_name = "../ChatbotMarkdown"
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
     
@@ -159,7 +159,14 @@ def main():
             main()
             return
 
-        if user_input.lower().startswith("browse ") and allow_web_search:
+        if allow_web_search and ('latest' in user_input.lower() or 'recent' in user_input.lower() or 'current' in user_input.lower()):
+            print(blue("\nBrowsing the web for the latest information..."))
+            search_query = user_input.replace("?", "")
+            web_result = browse_website(f"https://www.google.com/search?q={search_query}")
+            print(green("\nWeb Browsing Result:"))
+            print(web_result)
+            messages.append({"role": "user", "content": f"Based on this web search result about '{search_query}':\n\n{web_result}\n\nPlease summarize the key points and provide relevant insights."})
+        elif user_input.lower().startswith("browse ") and allow_web_search:
             url = user_input[7:]  # Remove "browse " from the start
             print(blue("\nBrowsing the web..."))
             web_result = browse_website(url)

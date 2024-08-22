@@ -200,7 +200,7 @@ def generate_markdown_file(content, title): # NEED TO GET WORKING
     if not title or title.strip() == "":
         title = "Untitled Document"
     
-    folder_name = "Markdown"
+    folder_name = "../Markdown"
     
     # Create the folder if it doesn't exist
     if not os.path.exists(folder_name):
