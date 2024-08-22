@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*- 
 
-# VidBriefs-Desktop/AI-Scripts/tedbriefs.py
+# VidBriefs-Desktop/AI-Scripts/tedtalk.py
 
 # Dependencies ------------------------------------------------------------------
 import sys, os, re, time, random, textwrap # system operations, regular expressions, time, and random selection

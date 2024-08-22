@@ -91,7 +91,7 @@ def chat_with_ai(messages, ai_model):
 
 def generate_markdown_file(content, title):
     """Generate a Markdown file with the given content and title."""
-    folder_name = "Markdown_Responses"
+    folder_name = "Markdown"
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
     
@@ -113,7 +113,7 @@ def main():
         print("\033[31mInvalid choice. Please enter 'gpt' or 'claude'.\033[0m")
         ai_model = input("\033[1mChoose your AI model (gpt/claude): \033[0m").strip().lower()
 
-    while True:
+    while True: # [ ] Expensive, change to only search for what it needs to
         transcript, metadata_file, annotation_file, comment_file = choose_random_data()
         
         transcript_content = read_file_content(os.path.join("transcripts", transcript))
@@ -123,19 +123,21 @@ def main():
 
         prompt = f"""Analyze the following data:
 
-Transcript:
-{transcript_content}
+            Transcript:
+            {transcript_content}
 
-Metadata:
-{metadata_content}
+            Metadata:
+            {metadata_content}
 
-Annotations:
-{annotation_content}
+            Annotations:
+            {annotation_content}
 
-Comments:
-{comment_content}
+            Comments:
+            {comment_content}
 
-Provide insights and analysis based on this information."""
+            Provide insights and analysis based on this information, then 
+            begin conversatiting with the user regarding the insights.
+        """
 
         response = chat_with_ai([{"role": "user", "content": prompt}], ai_model)
         print("\033[1m\033[32m\nAI Analysis:\033[0m")
