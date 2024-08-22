@@ -3,3 +3,4 @@
 - [X] chatbot.py
 - [X] sight.py
 - [ ] news.py (using news-api)
+- [ ] mit.py

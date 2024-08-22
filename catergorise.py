@@ -39,8 +39,9 @@ CATEGORIES = [
     "Travel",
     "Other"
 ]
-MARKDOWN_DIR = "Markdown"
-CATEGORIES_DIR = "Categories"
+MARKDOWN_DIR = "Markdown/"
+CHATBOT_MARKDOWN_DIR = "ChatbotMarkdown/"
+CATEGORIES_DIR = "Categories/"
 
 def categorise_with_ai(content):
     prompt = f"Categorise the following content into one of these categories: {', '.join(CATEGORIES)}. Respond with just the category name.\n\nContent: {content[:500]}..."
