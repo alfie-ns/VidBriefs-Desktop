@@ -15,7 +15,7 @@ fi
 # Function to display the menu
 display_menu() {
     echo "========================================="
-    echo "       VidBriefs-Desktop Launcher        "
+    echo "                VidBriefs-Desktop        "
     echo "========================================="
     echo "1. YouTube Transcript AI Assistant"
     echo "2. Enhanced AI Chatbot Assistant"

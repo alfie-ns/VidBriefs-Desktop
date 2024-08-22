@@ -110,7 +110,7 @@ def chat_with_ai(messages, personality, ai_model, allow_web_search=False, allow_
         return "Invalid AI model selected."
     
 def generate_markdown_file(content, title):
-    folder_name = "../ChatbotMarkdown"
+    folder_name = "../Markdown"
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
     
