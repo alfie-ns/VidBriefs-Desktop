@@ -1,5 +1,17 @@
 #!/bin/bash
 
+# Function to handle the exit command
+exit_script() {
+    clear
+    echo "Exiting..."
+    sleep 2
+    clear
+    exit 0
+}
+
+# Trap the SIGINT signal (Ctrl+C) and call the exit_script function
+trap exit_script SIGINT
+
 clear
 
 # if user not in a venv, exit with failure; 'z' checks if the string is empty
@@ -24,49 +36,53 @@ display_menu() {
     echo "5. News Assistant"
     echo "6. Exit"
     echo "========================================="
-    echo "Enter your choice (1-4): "
+    echo "Enter your choice (1-6) or press Shift+C to exit: "
 }
 
 # Main loop -------------------------------------
 while true; do
     display_menu
-    read choice # read user input
+    read -rsn1 input # read a single character without echoing to the terminal
 
-    case $choice in # if-else ladder
-        1) # ';;' marks the end of the case
-            echo -e "\nLaunching YouTube Transcript AI Assistant...\n"
-            python3 AI-Scripts/youtube.py
-            ;;
-        2)
-            echo -e "\nLaunching Enhanced AI Chatbot Assistant...\n"
-            python3 AI-Scripts/chatbot.py
-            ;;
-        3)
-            echo -e "\nLaunching TED Talk Analysis Assistant...\n"
-            python3 AI-Scripts/tedbriefs.py
-            ;;
-        4)
-            echo -e "Launching Sight Repo Assistant...\n"
-            python3 AI-Scripts/sight.py
-            ;;
-        5)
-            
-            echo -e "\nLaunching AI-Scripts/news.py...\n"
-            python3 AI-Scripts/news.py
-            ;;
-        6)
-            clear
-            echo -e "\nExiting...\n"
-            exit 0
-            ;;
-        *)
-            echo "Invalid choice. Please try again."
-            ;;
-    esac # end case
+    if [[ $input == $'\x1B' ]]; then # detect escape sequence
+        read -rsn2 input # read the next two characters
+        if [[ $input == "[C" ]]; then # detect Shift+C (right arrow key)
+            exit_script
+        fi
+    elif [[ $input =~ ^[1-6]$ ]]; then
+        echo $input # echo the input so the user can see what they chose
+        case $input in
+            1)
+                echo -e "\nLaunching YouTube Transcript AI Assistant...\n"
+                python3 AI-Scripts/youtube.py
+                ;;
+            2)
+                echo -e "\nLaunching Enhanced AI Chatbot Assistant...\n"
+                python3 AI-Scripts/chatbot.py
+                ;;
+            3)
+                echo -e "\nLaunching TED Talk Analysis Assistant...\n"
+                python3 AI-Scripts/tedtalk.py
+                ;;
+            4)
+                echo -e "Launching Sight Repo Assistant...\n"
+                python3 AI-Scripts/sight.py
+                ;;
+            5)
+                echo -e "\nLaunching AI-Scripts/news.py...\n"
+                python3 AI-Scripts/news.py
+                ;;
+            6)
+                exit_script
+                ;;
+        esac
 
-    # Pause before clearing the screen and showing the menu again
-    echo
-    echo "Press Enter to continue..."
-    read # waits for input
-    clear
+        # Pause before clearing the screen and showing the menu again
+        echo
+        echo "Press Enter to continue..."
+        read # waits for input
+        clear
+    else
+        echo "Invalid choice. Please try again."
+    fi
 done

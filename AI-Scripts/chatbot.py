@@ -158,19 +158,24 @@ def main():
             time.sleep(1.5)
             sys.exit()
 
+
         if user_input.lower() == "restart":
             print(bold(green("\nRestarting the assistant...")))
             main()
             return
 
-        if allow_web_search and ('latest' in user_input.lower() or 'recent' in user_input.lower() or 'current' in user_input.lower()):
-            print(blue("\nBrowsing the web for the latest information..."))
+        if allow_web_search:
+            print(blue("\nSearching the web for relevant information..."))
             search_query = user_input.replace("?", "")
             web_result = browse_website(f"https://www.google.com/search?q={search_query}")
-            print(green("\nWeb Browsing Result:"))
+            print(green("\nWeb Search Result:"))
             print(web_result)
-            messages.append({"role": "user", "content": f"Based on this web search result about '{search_query}':\n\n{web_result}\n\nPlease summarize the key points and provide relevant insights."})
-        elif user_input.lower().startswith("browse ") and allow_web_search:
+            messages.append({
+                "role": "system", 
+                "content": f"Web search results for '{search_query}':\n\n{web_result}\n\nPlease use this information to answer the user's question."
+            })
+
+        if user_input.lower().startswith("browse ") and allow_web_search:
             url = user_input[7:]  # Remove "browse " from the start
             print(blue("\nBrowsing the web..."))
             web_result = browse_website(url)

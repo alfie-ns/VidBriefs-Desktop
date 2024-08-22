@@ -6,6 +6,7 @@
 # Dependencies ------------------------------------------------------------------
 import sys, os, re, time, random, textwrap # system operations, regular expressions, time, and random selection
 from dotenv import load_dotenv # for loading environment variables from .env file
+from functools import partial # for creating partial functions [ ]
 
 # --------------AI APIS----------------
 
@@ -106,7 +107,7 @@ def chat_with_ai(messages, personality, ai_model, ted_talk_title):
 
 def get_ted_talk_content(talk_title): # --Systematic Traversal--
     """Fetch and return the content of a TED talk given its title."""
-    for root, dirs, files in os.walk("TED-talks"): # Recursively walk through the TED-talks directory
+    for root, dirs, files in os.walk("config/TED-talks"): # Recursively walk through the TED-talks directory
         for file in files: # For each file in the current directory
             if file.endswith(".md") and talk_title in file: # If the file is a Markdown file and its name contains the talk title
                 with open(os.path.join(root, file), 'r') as f: # Open the file for reading
@@ -128,7 +129,7 @@ def get_all_talk_titles(): # --Breadth-First Processing of Depth-First Traversal
     It'll process 1.md and 2.md in A before moving to folder B.
     """
     titles = []
-    for root, dirs, files in os.walk("TED-talks"):
+    for root, dirs, files in os.walk("config/TED-talks"):
         for file in files:
             if file.endswith(".md"):
                 titles.append(file[:-3])  # Remove .md extension
@@ -145,14 +146,33 @@ def recommend_ted_talks(user_interests, all_talks, num_recommendations=3):
         if any(interest.lower() in content.lower() for interest in user_interests):
             relevant_talks.append(talk)
     
+    # If we have enough relevant talks, return a random selection of them
     if len(relevant_talks) >= num_recommendations:
         return random.sample(relevant_talks, num_recommendations)
+    
+    # If we don't have enough relevant talks, add all of them to recommendations
+    recommendations = relevant_talks.copy()
+    
+    # Calculate how many more recommendations we need
+    remaining_needed = num_recommendations - len(recommendations)
+    
+    # Get the talks that weren't selected as relevant
+    remaining_talks = [talk for talk in all_talks if talk not in relevant_talks]
+    
+    # If we have enough remaining talks, randomly select the number we need
+    if len(remaining_talks) >= remaining_needed:
+        recommendations.extend(random.sample(remaining_talks, remaining_needed))
     else:
-        # If not enough relevant talks, fill the rest with random talks
-        recommendations = relevant_talks.copy()
-        remaining_talks = [talk for talk in all_talks if talk not in relevant_talks]
-        recommendations.extend(random.sample(remaining_talks, num_recommendations - len(relevant_talks)))
-        return recommendations
+        # If we don't have enough remaining talks, add all of them
+        recommendations.extend(remaining_talks)
+    
+    # If we still don't have enough recommendations, pad with random selections from all_talks
+    while len(recommendations) < num_recommendations:
+        random_talk = random.choice(all_talks)
+        if random_talk not in recommendations:
+            recommendations.append(random_talk)
+    
+    return recommendations
 
 # Helper function to get a preview of the talk content
 def get_talk_preview(talk_title, max_length=200):
@@ -231,6 +251,11 @@ def generate_markdown_file(content, title): # NEED TO GET WORKING
 def main():
     all_talks = get_all_talk_titles()
 
+    if not all_talks:
+        print(red("Error: No TED talks found. Please check the 'TED-talks' directory."))
+        print("Make sure you have .md files in the TED-talks directory or its subdirectories.")
+        return
+
     while True:  # Outer loop for restart functionality
         os.system('clear')
         print(bold(blue("\nTED Talk Analysis Assistant\n")))
@@ -271,11 +296,14 @@ def main():
         
         if user_interests:
             recommended_talks = recommend_ted_talks(user_interests, all_talks)
-            print(green("\nRecommended TED Talks based on your interests:"))
+            if recommended_talks:
+                print(green("\nRecommended TED Talks based on your interests:"))
+            else:
+                print(yellow("\nNo talks matched your interests. Here are some random selections:"))
+                recommended_talks = random.sample(all_talks, min(3, len(all_talks)))
         else:
             recommended_talks = random.sample(all_talks, min(3, len(all_talks)))
             print(green("\nRandomly selected TED Talks:"))
-
         for i, talk in enumerate(recommended_talks, 1):
             preview = get_talk_preview(talk)
             print(f"{i}. {talk}")

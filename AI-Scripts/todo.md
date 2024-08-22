@@ -2,5 +2,5 @@
 - [X] tedtalk.py
 - [X] chatbot.py
 - [X] sight.py
-- [ ] news.py (using news-api)
+- [ ] news.py (news-api)
 - [ ] mit.py
