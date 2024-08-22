@@ -85,7 +85,7 @@ def chat_with_ai(messages, personality, ai_model, allow_web_search=False, allow_
         try:
             messages.insert(0, {"role": "system", "content": system_message})
             response = openai_client.chat.completions.create(
-                model="gpt-4o-mini",  # Ensure you're using an appropriate model
+                model="gpt-4o-mini", 
                 messages=messages,
                 max_tokens=1000
             )
@@ -143,7 +143,7 @@ def main():
     print(f"Code analysis: {bold('Enabled' if allow_analysis else 'Disabled')}")
     print("\nType 'exit' to quit, 'restart' to start over, 'browse [URL]' for web browsing, or 'analyze [your code]' for code analysis.")
 
-    messages = []
+    messages = [] # initalise message list as empty
 
     while True:
         user_input = input(bold("\nYou: ")).strip()
