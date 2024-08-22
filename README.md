@@ -1,34 +1,65 @@
-# VidBriefs-Desktop
+# VidBriefs-Desktop Setup Instructions
 
-1. Get your OpenAI API key: **https://platform.openai.com/api-keys**
+## 1. Obtain OpenAI API Key
 
----
+Get your OpenAI API key from: https://platform.openai.com/api-keys
 
-2. Create environment to hold API key:  run scripts/create-env.sh bash script in root directory
+## 2. Create Environment for API Key
 
----
+Run the following bash script in the scripts/ directory:
 
-3. Create .env file and paste in: **OPENAI_API_KEY={api-key}**
+```
+scripts/create-env.sh
+```
 
-   || 'nano .env' then  OPENAI_API_KEY={api-key}
+## 3
 
----
+Create a `.env` file and add your API key:
 
-4. In the terminal directory for this project, run: **python -m venv venv**
+```
+OPENAI_API_KEY=your-api-key-here
+```
 
----
+Alternatively, use nano:
 
-5. Now, run: **source venv/bin/activate**
+```
+nano .env
+```
 
----
+Then add: `OPENAI_API_KEY=your-api-key-here`
 
-6. If previous commands ran correctly, you are now in a dependency-isolated virtual environment, now run **./install-requirements.sh**
+## 4. Create Virtual Environment
 
----
+In the project's root directory, run:
 
-**./youtube.py** - script to load and talk about Youtube videos
-**./tedtalks.py** - script to reccomend and talk about Ted Talks
-...
-**./categorise.py** - process to organise markdown files into categories
+```
+python -m venv venv
+```
 
-execute Python scripts with using respective script's shebang, e.g. **./youtube.py**
+## 5. Activate Virtual Environment
+
+Activate the virtual environment:
+
+```
+source venv/bin/activate
+```
+
+## 6. Install Dependencies
+
+Once in the virtual environment, run:
+
+```
+./install-requirements.sh
+```
+
+## Available Scripts
+
+- `./youtube.py`: Script to load and discuss YouTube videos
+- `./tedtalks.py`: Script to recommend and discuss TED Talks
+- `./categorise.py`: Process to organize markdown files into categories
+
+Execute Python scripts using their respective shebang, e.g.:
+
+```
+./youtube.py
+```
