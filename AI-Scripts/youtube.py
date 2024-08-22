@@ -171,7 +171,7 @@ def get_transcript(url):
     if not video_id:
         raise ValueError("No video ID found in URL")
     
-    transcript = YouTubeTranscriptApi.get_transcript(video_id) # Get the transcript for the video
+    transcript = YouTubeTranscriptApi.get_transcript(video_id) # Get the transcript for the video using the video ID
     sentences = [entry['text'] for entry in transcript] # Extract the text into a list of sentences
     return " ".join(sentences) # Join the sentences into a single string
 
