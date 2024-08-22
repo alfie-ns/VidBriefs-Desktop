@@ -2,6 +2,16 @@
 
 clear
 
+# if user not in a venv, exit with failure; 'z' checks if the string is empty
+if [[ -z "$VIRTUAL_ENV" ]]; then
+    echo "Not inside a virtual environment. Exiting with failure."
+    echo ""
+    echo "To set up a virtual environment, do 'python -m venv venv'"
+    echo "Then, to activate the venv, do 'source venv/bin/activate'"
+    echo "Finally, run 'cd setup; ./install-requirements.sh' to install the necessary packages into the venv."
+    exit 1
+fi
+
 # Function to display the menu
 display_menu() {
     echo "========================================="
@@ -11,7 +21,8 @@ display_menu() {
     echo "2. Enhanced AI Chatbot Assistant"
     echo "3. TED Talk Analysis Assistant"
     echo "4. Sight Repo Assistant"
-    echo "5. Exit"
+    echo "5. News Assistant"
+    echo "6. Exit"
     echo "========================================="
     echo "Enter your choice (1-4): "
 }
@@ -39,6 +50,11 @@ while true; do
             python3 AI-Scripts/sight.py
             ;;
         5)
+            
+            echo -e "\nLaunching AI-Scripts/news.py...\n"
+            python3 AI-Scripts/news.py
+            ;;
+        6)
             clear
             echo -e "\nExiting...\n"
             exit 0

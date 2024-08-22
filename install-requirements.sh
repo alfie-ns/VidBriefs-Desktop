@@ -1,4 +1,5 @@
 #!/bin/bash
+cd ..
 if [[ -z "$VIRTUAL_ENV" ]]; then
     echo "Not inside a virtual environment. Exiting with failure." && exit 1
 else
