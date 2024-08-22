@@ -1,0 +1,5 @@
+- [X] youtube.py
+- [X] tedtalk.py
+- [X] chatbot.py
+- [X] sight.py
+- [ ] news.py (using news-api)

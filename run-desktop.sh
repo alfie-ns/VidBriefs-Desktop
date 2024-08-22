@@ -10,7 +10,8 @@ display_menu() {
     echo "1. YouTube Transcript AI Assistant"
     echo "2. Enhanced AI Chatbot Assistant"
     echo "3. TED Talk Analysis Assistant"
-    echo "4. Exit"
+    echo "4. Sight Repo Assistant"
+    echo "5. Exit"
     echo "========================================="
     echo "Enter your choice (1-4): "
 }
@@ -34,6 +35,11 @@ while true; do
             python3 AI-Scripts/tedbriefs.py
             ;;
         4)
+            echo -e "Launching Sight Repo Assistant...\n"
+            python3 AI-Scripts/sight.py
+            ;;
+        5)
+            clear
             echo -e "\nExiting...\n"
             exit 0
             ;;
