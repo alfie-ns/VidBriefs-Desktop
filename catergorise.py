@@ -40,7 +40,7 @@ CATEGORIES = [
     "Travel",
     "Other"
 ]
-MARKDOWN_DIR = "../Markdown/"
+MARKDOWN_DIR = "Markdown/"
 CHATBOT_MARKDOWN_DIR = "NexusMarkdown/"
 CATEGORIES_DIR = "Categories/"
 
