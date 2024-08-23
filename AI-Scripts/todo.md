@@ -1,6 +1,10 @@
 - [X] youtube.py
 - [X] tedtalk.py
-- [X] chatbot.py
+- [X] tedtalk2
+- [X] nexus.py
+- [X] Fix web browsing
+- [X] Make up-to-date web browsing
+- [ ] nexus2(make it make a title for the respective file)
 - [X] sight.py
 - [ ] news.py (news-api)
 - [ ] mit.py
