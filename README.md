@@ -1,4 +1,4 @@
-# VidBriefs-Desktop Setup Instructions
+# VidBriefs-Desktop Virtual Environment Setup
 
 ## 1. Obtain OpenAI API Key
 
@@ -12,7 +12,7 @@ Run the following bash script in the scripts/ directory:
 scripts/create-env.sh
 ```
 
-## 3
+## 3. Add API Key to Environment
 
 Create a `.env` file and add your API key:
 

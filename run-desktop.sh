@@ -14,31 +14,43 @@ trap exit_script SIGINT
 
 clear
 
-# if user venv not active, exit with failure; 'z' checks if the string is empty
+# Check if the user is in a virtual environment
 if [[ -z "$VIRTUAL_ENV" ]]; then
-    echo "Not inside a virtual environment. Exiting with failure."
+    printf '\n%s\n' "$(tput bold)ERROR: Not in a virtual environment$(tput sgr0)"
     echo ""
-    echo "To set up a virtual environment, do 'python3 -m venv venv'"
-    echo "Then, to activate the venv, do 'source venv/bin/activate'"
-    echo "Finally, run 'cd setup; ./install-requirements.sh' to install the necessary packages into the venv."
+    echo "Please follow these steps to set up and activate a virtual environment:"
+    echo ""
+    echo "1. Create a virtual environment:"
+    echo "   python3 -m venv venv"
+    echo ""
+    echo "2. Activate the virtual environment:"
+    echo "   source venv/bin/activate"
+    echo ""
+    echo "3. Install required packages:"
+    echo "   cd setup"
+    echo "   ./install-requirements.sh"
+    echo ""
+    echo "After completing these steps, please run this script again."
     exit 1
 fi
 
 # Function to display the menu
 display_menu() {
-    echo "========================================="
-    echo "                VidBriefs-Desktop        "
-    echo "========================================="
-    echo "1. YouTube Transcript AI Assistant"
-    echo "2. Enhanced AI Chatbot Assistant(Nexus)"
-    echo "3. TED Talk Analysis Assistant"
-    echo "4. Sight Repo Assistant"
-    echo "5. Catergorise your insights"
-    echo "6. Exit"
-    echo "========================================="
-    echo "Enter your choice (1-6) or press Shift+C to exit: "
+    echo "╔════════════════════════════════════════╗"
+    echo "║            VidBriefs-Desktop           ║"
+    echo "╠════════════════════════════════════════╣"
+    echo "║ 1. YouTube Transcript AI Assistant     ║"
+    echo "║ 2. Enhanced AI Chatbot Assistant(Nexus)║"
+    echo "║ 3. TED Talk Analysis Assistant         ║"
+    echo "║ 4. Sight Repo Assistant                ║"
+    echo "║ 5. Huberman.py                         ║"
+    echo "╠════════════════════════════════════════╣"
+    echo "║ 6. Categorise your insights            ║"
+    echo "╠════════════════════════════════════════╣"
+    echo "║ 7. Exit                                ║"
+    echo "╚════════════════════════════════════════╝"
+    echo "Enter your choice (1-7) or press Shift+C to exit: "
 }
-
 # Main loop -------------------------------------
 while true; do
     display_menu
@@ -69,10 +81,15 @@ while true; do
                 python3 AI-Scripts/sight.py
                 ;;
             5)
+                echo -e "\nLaunching Huberman.py...\n"
+                python3 AI-Scripts/huberman.py
+                ;;
+
+            6) 
                 echo -e "\nCategorising the .md files...\n"
                 python3 catergorise.py
                 ;;
-            6)
+            7)
                 exit_script
                 ;;
         esac
