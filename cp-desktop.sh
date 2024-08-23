@@ -1,8 +1,23 @@
 #!/bin/bash
 
-# Find all Python files in ai-scripts/ and copy them to the current directory
+#Vidbriefs/vidbriefs-desktop/cp-desktop.sh
 
-find ai-scripts/ -name "*.py" -type f -exec echo "File: {}" \; -exec cat {} \; -exec echo \; | pbcopy
+# Temporary file to store combined output
+temp_file=$(mktemp)
 
-# Optional: If you want to see what files are being copied, add the -v flag to cp
-# find ai-scripts/ -name "*.py" -type f -print0 | xargs -0 -I {} cp -v {} .
+# Find all Python files in ai-scripts/ and copy their contents
+find ai-scripts/ -name "*.py" -type f -exec echo "File: {}" \; -exec cat {} \; -exec echo \; >> "$temp_file"
+
+# Add a separator between the two sections
+echo -e "\n--- run-desktop.sh ---\n" >> "$temp_file"
+
+# Find run-desktop.sh and copy its contents
+find run-desktop.sh -type f -exec echo "File: {}" \; -exec cat {} \; -exec echo \; >> "$temp_file"
+
+# Copy the combined contents to clipboard
+cat "$temp_file" | pbcopy
+
+# Clean up
+rm "$temp_file"
+
+echo "Contents of Python files in ai-scripts/ and run-desktop.sh have been copied to clipboard."

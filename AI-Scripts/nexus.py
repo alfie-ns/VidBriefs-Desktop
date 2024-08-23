@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# VidBriefs-Desktop/AI-Scripts/chatbot.py
+# VidBriefs-Desktop/AI-Scripts/nexus.py
 
 # Dependencies ------------------------------------------------------------------
 import sys
