@@ -4,7 +4,7 @@
 exit_script() {
     clear
     echo "Exiting..."
-    sleep 0.5
+    sleep 0.25 # wait for 0.25 seconds
     clear
     exit 0 # exit successfully
 }
@@ -14,7 +14,7 @@ trap exit_script SIGINT
 
 clear
 
-# if user not in a venv, exit with failure; 'z' checks if the string is empty
+# if user venv not active, exit with failure; 'z' checks if the string is empty
 if [[ -z "$VIRTUAL_ENV" ]]; then
     echo "Not inside a virtual environment. Exiting with failure."
     echo ""
