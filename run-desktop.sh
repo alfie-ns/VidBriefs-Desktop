@@ -4,7 +4,7 @@
 exit_script() {
     clear
     echo "Exiting..."
-    sleep 2
+    sleep 0.5
     clear
     exit 0
 }
@@ -33,7 +33,8 @@ display_menu() {
     echo "2. Enhanced AI Chatbot Assistant(Nexus)"
     echo "3. TED Talk Analysis Assistant"
     echo "4. Sight Repo Assistant"
-    echo "5. Exit"
+    echo "5. Catergorise your insights"
+    echo "6. Exit"
     echo "========================================="
     echo "Enter your choice (1-6) or press Shift+C to exit: "
 }
@@ -49,7 +50,7 @@ while true; do
             exit_script
         fi
     elif [[ $input =~ ^[1-6]$ ]]; then
-        echo $input # echo the input so the user can see what they chose
+        echo $input # echo the input so the user can see what they've chosen
         case $input in
             1)
                 echo -e "\nLaunching YouTube Transcript AI Assistant...\n"
@@ -68,6 +69,10 @@ while true; do
                 python3 AI-Scripts/sight.py
                 ;;
             5)
+                echo -e "\nCategorising the .md files...\n"
+                python3 catergorise.py
+                ;;
+            6)
                 exit_script
                 ;;
         esac
