@@ -30,11 +30,10 @@ display_menu() {
     echo "                VidBriefs-Desktop        "
     echo "========================================="
     echo "1. YouTube Transcript AI Assistant"
-    echo "2. Enhanced AI Chatbot Assistant"
+    echo "2. Enhanced AI Chatbot Assistant(Nexus)"
     echo "3. TED Talk Analysis Assistant"
     echo "4. Sight Repo Assistant"
-    echo "5. News Assistant"
-    echo "6. Exit"
+    echo "5. Exit"
     echo "========================================="
     echo "Enter your choice (1-6) or press Shift+C to exit: "
 }
@@ -57,8 +56,8 @@ while true; do
                 python3 AI-Scripts/youtube.py
                 ;;
             2)
-                echo -e "\nLaunching Enhanced AI Chatbot Assistant...\n"
-                python3 AI-Scripts/chatbot.py
+                echo -e "\nLaunching Nexus (Enhanced AI Chatbot Assistant)...\n"
+                python3 AI-Scripts/nexus.py
                 ;;
             3)
                 echo -e "\nLaunching TED Talk Analysis Assistant...\n"
@@ -69,10 +68,6 @@ while true; do
                 python3 AI-Scripts/sight.py
                 ;;
             5)
-                echo -e "\nLaunching AI-Scripts/news.py...\n"
-                python3 AI-Scripts/news.py
-                ;;
-            6)
                 exit_script
                 ;;
         esac

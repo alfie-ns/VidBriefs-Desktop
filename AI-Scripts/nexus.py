@@ -18,6 +18,7 @@ import requests
 from bs4 import BeautifulSoup
 import threading
 from urllib.parse import urlparse
+from urllib.parse import quote_plus
 
 # Load environment variables
 load_dotenv()
@@ -74,10 +75,33 @@ def browse_website(url):
         return f"Title: {title}\n\nContent Summary:\n{main_content}"
     except Exception as e:
         return f"Error browsing the website: {str(e)}"
+    
+def search_relevant_links(query, num_links=3):
+    search_url = f"https://www.google.com/search?q={quote_plus(query)}"
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+    
+    try:
+        response = requests.get(search_url, headers=headers, timeout=10)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        links = []
+        for result in soup.select('.yuRUbf > a')[:num_links]:
+            title = result.select_one('h3').text
+            url = result['href']
+            links.append(f"[{title}]({url})")
+        
+        return links
+    except Exception as e:
+        print(red(f"Error searching for links: {str(e)}"))
+        return []
 
 # AI Communication Function -----------------------------------------------------
 def chat_with_ai(messages, personality, ai_model, allow_web_search=False, allow_analysis=False):
-    system_message = f"You are a {personality} AI assistant. Provide helpful and engaging responses. Use markdown formatting when appropriate."
+    system_message = f"""You are a {personality} AI assistant. Provide helpful and engaging responses. Use markdown formatting when appropriate. 
+    For each response, include 3-5 relevant links to authoritative sources that provide more information on the topic discussed. 
+    Format these links as [Title](URL) at the end of your response under a 'Further Reading' section.
+    """
+    
     if allow_web_search:
         system_message += " You have the ability to search the web for information when needed. When asked about current events or recent information, use your web browsing capability to provide up-to-date information. When you receive web content, analyze and summarize it concisely."
     if allow_analysis:
@@ -91,7 +115,7 @@ def chat_with_ai(messages, personality, ai_model, allow_web_search=False, allow_
                 messages=messages,
                 max_tokens=1000
             )
-            return response.choices[0].message.content
+            ai_response = response.choices[0].message.content
         except Exception as e:
             return f"Error communicating with GPT: {str(e)}"
     elif ai_model == "claude":
@@ -103,12 +127,24 @@ def chat_with_ai(messages, personality, ai_model, allow_web_search=False, allow_
                 system=system_message,
                 messages=claude_messages
             )
-            return response.content[0].text
+            ai_response = response.content[0].text
         except Exception as e:
             return f"Error communicating with Claude: {str(e)}"
     else:
         return "Invalid AI model selected."
     
+    # If the AI didn't provide links, we can still use our search function
+    if "Further Reading" not in ai_response:
+        keywords = re.findall(r'\b\w+\b', ai_response)[:3]  # Use the first 3 words as keywords
+        links = []
+        for keyword in keywords:
+            links.extend(search_relevant_links(keyword, num_links=1))
+        
+        if links:
+            ai_response += "\n\nFurther Reading:\n" + "\n".join(links)
+    
+    return ai_response
+
 def generate_markdown_file(content, title):
     folder_name = "../Markdown"
     if not os.path.exists(folder_name):
@@ -155,7 +191,7 @@ def main():
         if user_input.lower() == 'exit':
             os.system('clear')
             print("\nExiting...")
-            time.sleep(1.5)
+            time.sleep(.5)
             sys.exit()
 
 

@@ -65,6 +65,14 @@ def fetch_news(query):
         print(red(f"Error fetching news: {str(e)}"))
         return []
     
+def get_news(query):
+    try:
+        news = newsapi.get_everything(q=query, language='en', sort_by='relevancy', page_size=10)
+        return news['articles']
+    except Exception as e:
+        print(red(f"Error fetching news: {str(e)}"))
+        return []
+    
 def browse_website(url):
     print(f"Browsing the website: {url}")
     try:

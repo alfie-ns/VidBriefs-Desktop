@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# sight.py
+# vidbriefs-desktop/AI-Scripts/sight.py
 
-import os
-import random
-import datetime
+import datetime, random, os, time
 from dotenv import load_dotenv
 from openai import OpenAI
 import anthropic
@@ -19,7 +17,7 @@ claude_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 def fetch_data(directory):
     """Fetch all files from a given directory."""
-    full_path = os.path.join("sight-repo", "data", directory)
+    full_path = os.path.join("config", "sight-repo", "data", directory)
     return [f for f in os.listdir(full_path) if os.path.isfile(os.path.join(full_path, f))]
 
 def fetch_transcripts():
@@ -58,7 +56,7 @@ def choose_random_data():
 
 def read_file_content(filepath):
     """Read and return the content of a file."""
-    full_path = os.path.join("sight-repo", "data", filepath)
+    full_path = os.path.join("config", "sight-repo", "data", filepath)
     with open(full_path, 'r') as file:
         return file.read()
 
@@ -149,6 +147,9 @@ def main():
 
         user_input = input("\033[1m\nEnter your question about the analysis (or 'exit' to quit): \033[0m")
         if user_input.lower() == 'exit':
+            os.system('clear')
+            print("Exiting...")
+            time.sleep(1)
             break
 
         follow_up_prompt = f"Based on the previous analysis, answer the following question: {user_input}"
