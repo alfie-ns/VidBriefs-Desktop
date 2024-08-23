@@ -149,7 +149,7 @@ def main():
         if user_input.lower() == 'exit':
             os.system('clear')
             print("Exiting...")
-            time.sleep(1)
+            time.sleep(.25) 
             break
 
         follow_up_prompt = f"Based on the previous analysis, answer the following question: {user_input}"
