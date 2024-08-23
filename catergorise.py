@@ -40,8 +40,8 @@ CATEGORIES = [
     "Travel",
     "Other"
 ]
-MARKDOWN_DIR = "Markdown/"
-CHATBOT_MARKDOWN_DIR = "ChatbotMarkdown/"
+MARKDOWN_DIR = "../Markdown/"
+CHATBOT_MARKDOWN_DIR = "NexusMarkdown/"
 CATEGORIES_DIR = "Categories/"
 
 def categorise_with_ai(content):

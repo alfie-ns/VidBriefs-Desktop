@@ -6,7 +6,7 @@ exit_script() {
     echo "Exiting..."
     sleep 0.5
     clear
-    exit 0
+    exit 0 # exit successfully
 }
 
 # Trap the SIGINT signal (Ctrl+C) and call the exit_script function
@@ -18,7 +18,7 @@ clear
 if [[ -z "$VIRTUAL_ENV" ]]; then
     echo "Not inside a virtual environment. Exiting with failure."
     echo ""
-    echo "To set up a virtual environment, do 'python -m venv venv'"
+    echo "To set up a virtual environment, do 'python3 -m venv venv'"
     echo "Then, to activate the venv, do 'source venv/bin/activate'"
     echo "Finally, run 'cd setup; ./install-requirements.sh' to install the necessary packages into the venv."
     exit 1
