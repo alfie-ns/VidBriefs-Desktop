@@ -5,8 +5,8 @@
 
 '''
 Nexus is an AI assistant that can communicate with users, 
-and search the web for relevant information, also
-
+and search the web for relevant information, also, can 
+execute python code, but this is just the start.
 '''
 
 # Dependencies ------------------------------------------------------------------
@@ -50,25 +50,6 @@ def red(text):
 
 def green(text):
     return format_text(text, "32")
-
-'''
-Truncation refers to the process of shortening something by cutting off part of it. 
-In computing, truncation typically involves limiting the length of a string, number,
-or other data type to a specified maximum, discarding any excess content.
-
-For example, if you have a text string that exceeds a certain length and you only want
-to display a portion of it, you would truncate the string, keeping only the first part 
-and removing the rest. Often, an ellipsis (”…”) is added to indicate that the content
-has been shortened.
-
-In mathematics, truncation can also refer to reducing the number of digits in a number,
-either by cutting off digits after a certain point (e.g., truncating the decimal part of
-a number) or by rounding down to a specific place value.
-
-it truncates the output to a maximum length of 3000 characters and adds an ellipsis;
-this is let the user know that the content has been truncated/shortened. It shortens
-to reduce an overload of information and to keep the output concise and readable.
-'''
 
 # Enhanced Web browsing functionality ------------------------------------------
 def search_and_browse(query):
@@ -145,6 +126,24 @@ def browse_website(url):
     
     :param url: URL of the website to browse
     :return: Extracted content from the website
+
+    Truncation refers to the process of shortening something by cutting off part of it. 
+    In computing, truncation typically involves limiting the length of a string, number,
+    or other data type to a specified maximum, discarding any excess content.
+
+    For example, if you have a text string that exceeds a certain length and you only want
+    to display a portion of it, you would truncate the string, keeping only the first part 
+    and removing the rest. Often, an ellipsis (”…”) is added to indicate that the content
+    has been shortened.
+
+    In mathematics, truncation can also refer to reducing the number of digits in a number,
+    either by cutting off digits after a certain point (e.g., truncating the decimal part of
+    a number) or by rounding down to a specific place value.
+
+    it truncates the output to a maximum length of 3000 characters and adds an ellipsis;
+    this is let the user know that the content has been truncated/shortened. It shortens
+    to reduce an overload of information and to keep the output concise and readable.
+
     """
     try:
         headers = {'User-Agent': 'Mosilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
@@ -231,7 +230,6 @@ def search_relevant_links(query, num_links=3):
         return []
 
 # AI System -------------------------------------------------------------------
-
 def execute_python_code(code):
     """
     Execute Python code and return the output.
@@ -370,7 +368,6 @@ def intelligent_code_analysis(user_input, ai_model, personality):
     return analysis
 
 # Markdown File Generation -----------------------------------------------------
-
 def generate_markdown_file(content, title):
     folder_name = "Markdown"
     if not os.path.exists(folder_name):

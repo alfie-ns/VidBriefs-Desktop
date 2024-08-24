@@ -177,7 +177,7 @@ def get_transcript(url):
     sentences = [entry['text'] for entry in transcript] # Extract the text into a list of sentences
     return " ".join(sentences) # Join the sentences into a single string
 
-# Text Styling and Markdown Functions ------------------------------------------------
+# Text Styling and Markdown Functions -----------------------------------------------
 def apply_markdown_styling(text):
     """
     Apply markdown-like styling to text.
@@ -282,8 +282,6 @@ def main():
         MEDIUM 🗣️ PERSUASIVE with LOW 🤔 SOCRATIC questioning.                                             
         HIGH 📊 DATA-DRIVEN and MEDIUM 🤝 EMPATHETIC approach
                                                     
-        EXTENSIVE MARKDOWN FILE CREATOR  
-        EXTENSIVE TRAVERSAL OF ALL VIDEO INSIGHTS
         Teacher                                      
         Your choice: """)))
         
