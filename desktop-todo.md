@@ -3,7 +3,7 @@
 - [ ] ai-scripts/copy-all-scripts.sh
 - [ ] go improve the code
 
-- [ ] make nexus create an account on a login page
+- [ ] make nexus able to create an account on a login page
 
 insights to extrapolate:
 
