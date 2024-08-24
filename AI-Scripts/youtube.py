@@ -6,6 +6,7 @@
 # Dependencies ------------------------------------------------------------------
 import sys, os, re, time # system operations, regular expressions, time
 from dotenv import load_dotenv # for loading environment variables from .env file
+import json # for JSON handling
 
 # --------------AI APIS---------------- 
 
@@ -39,6 +40,80 @@ claude_api_key = os.getenv("ANTHROPIC_API_KEY")
 # Initialise OpenAI client
 openai_client = OpenAI(api_key=openai_api_key)
 claude_client = anthropic.Anthropic(api_key=claude_api_key)
+
+# --------------------------------------------------------------------------------
+# [ ] AI Personality  🛠️ ---------------------------------------------------------
+# --------------------------------------------------------------------------------
+
+PERSONALITY_TRAITS = {
+    "ANALYTICAL": {
+        "description": "Provides detailed, logical breakdowns of concepts",
+        "levels": {
+            "LOW": "Offer basic analysis of key points",
+            "MEDIUM": "Provide moderate depth analysis with some supporting details",
+            "HIGH": "Deliver in-depth analysis with extensive supporting evidence and logical reasoning"
+        }
+    },
+    "CREATIVE": {
+        "description": "Offers unique perspectives and unconventional ideas",
+        "levels": {
+            "LOW": "Suggest straightforward applications of concepts",
+            "MEDIUM": "Propose some creative connections between ideas",
+            "HIGH": "Generate highly innovative and unexpected insights"
+        }
+    },
+    "INSIGHTFUL": {
+        "description": "Extracts meaningful insights and implications",
+        "levels": {
+            "LOW": "Identify basic takeaways from the content",
+            "MEDIUM": "Uncover some non-obvious implications of the material",
+            "HIGH": "Reveal profound insights and far-reaching consequences of the ideas presented"
+        }
+    },
+    "PRACTICAL": {
+        "description": "Focuses on real-world applications and actionable advice",
+        "levels": {
+            "LOW": "Mention basic practical uses of the information",
+            "MEDIUM": "Provide some concrete examples of how to apply the knowledge",
+            "HIGH": "Offer detailed, step-by-step guidance for implementing ideas in various contexts"
+        }
+    }
+}
+
+def load_personality(file_path='personality.json'):
+    try:
+        with open(file_path, 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+
+def save_personality(personality, file_path='personality.json'):
+    with open(file_path, 'w') as f:
+        json.dump(personality, f, indent=2)
+
+def customize_personality():
+    personality = {}
+    print("\nCustomize your AI assistant's personality:")
+    for trait, info in PERSONALITY_TRAITS.items():
+        print(f"\n{trait}: {info['description']}")
+        while True:
+            level = input(f"Choose level for {trait} (LOW/MEDIUM/HIGH): ").upper()
+            if level in info['levels']:
+                personality[trait] = level
+                break
+            print("Invalid choice. Please enter LOW, MEDIUM, or HIGH.")
+    save_personality(personality)
+    return personality
+
+def generate_personality_prompt(personality):
+    prompt = "You are an AI assistant analyzing content with the following traits:\n\n"
+    for trait, level in personality.items():
+        prompt += f"- {PERSONALITY_TRAITS[trait]['description']} ({level}):\n"
+        prompt += f"  {PERSONALITY_TRAITS[trait]['levels'][level]}\n"
+    prompt += "\nFocus on delivering insights based on the user's summaries and queries."
+    return prompt
+
+# --------------------------------------------------------------------------------
 
 # --------------------------------------------------------------------------------
 # Formatting Functions 🟨 --------------------------------------------------------
@@ -270,14 +345,15 @@ def main():
         - 🌐 MULTIDISCIPLINARY: "HIGH 🌐 MULTIDISCIPLINARY with MEDIUM 🔗 CONTEXTUALIZING"
         - 📚 ACADEMIC: "HIGH 📚 ACADEMIC with LOW 🧪 EXPERIMENTAL style"
         - 🤔 SOCRATIC: "MEDIUM 🤔 SOCRATIC with HIGH 🔍 QUESTIONING focus"
-        - 🤝 EMPATHETIC: "HIGH 🤝 EMPATHETIC with MEDIUM 👥 COLLABORATIVE approach"
         - 💡 INNOVATIVE: "BALANCED 💡 INNOVATIVE-🔬 TECHNICAL style"
         - 📊 DATA-DRIVEN: "HIGH 📊 DATA-DRIVEN with LOW 🖼️ CONCEPTUAL emphasis"
         - 🧩 PROBLEM-SOLVING: "MEDIUM 🧩 PROBLEM-SOLVING with HIGH 🔀 ADAPTIVE focus"
-        Combine these or create your own to define the AI's learning style and personality.
-        Remember, you can specify intensity levels (LOW, MEDIUM, HIGH, BALANCED) and combine
-        traits.
+        - 🌈 VISUAL: "LOW 🌈 VISUAL with HIGH 🎨 CREATIVE approach"
+        - 🖼️ CONCEPTUAL: "MEDIUM 🖼️ CONCEPTUAL with LOW 📊 DATA-DRIVEN focus"
+        - 🔍 QUESTIONING: "HIGH 🔍 QUESTIONING with MEDIUM 🤔 SOCRATIC approach"
+        - 🔬 TECHNICAL: "LOW 🔬 TECHNICAL with HIGH 🧠 ANALYTICAL focus"
                                                     
+        Examples:                                            
         BALANCED 🧠 ANALYTICAL-🎨 CREATIVE with HIGH 🌐 MULTIDISCIPLINARY focus.
         MEDIUM 🗣️ PERSUASIVE with LOW 🤔 SOCRATIC questioning.                                             
         HIGH 📊 DATA-DRIVEN and MEDIUM 🤝 EMPATHETIC approach
@@ -355,7 +431,7 @@ def main():
         except KeyboardInterrupt: # Handle Ctrl+C to exit the program
             os.system('clear')
             print("\nExiting...")
-            time.sleep(1.75)
+            time.sleep(.75)
             os.system('clear')
             sys.exit()
 

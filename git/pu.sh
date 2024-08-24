@@ -8,13 +8,14 @@ print_bold() {
 }
 
 # Function to get commit importance
-get_commit_importance() {
-    read -p "Enter the number (1-3): " importance
-    # read input as importance variable used in case statement
+get_commit_importance() { # read user input into importance variable
+    read -p "Enter the number (1-5): " importance
     case $importance in
-        1) echo "Minor: Small changes, fixes, or updates";;
-        2) echo "Significant: New features, major improvements, or important fixes";;
-        3) echo "Working: Most recent fully-working version";;
+        1) echo "Trivial: Typos, formatting, or very minor changes";;
+        2) echo "Minor: Small changes, fixes, or updates";;
+        3) echo "Moderate: Notable improvements or additions";;
+        4) echo "Significant: Major features or important fixes";;
+        5) echo "Critical: Crucial updates or milestone achievements";;
         *) echo "Invalid choice. Using 'Minor' as default."; echo "Minor: Small changes, fixes, or updates";;
     esac
 }
@@ -24,9 +25,11 @@ cd .. # backtrack to main directory
 git add .
 
 print_bold "\nCommit importance:"
-echo "1. Minor: Small changes, fixes, or updates"
-echo "2. Significant: New features, major improvements, or important fixes"
-echo -e "3. Working: Newest fully-working version\n"
+echo "1. Trivial: Typos, formatting, or very minor changes"
+echo "2. Minor: Small changes, fixes, or updates"
+echo "3. Moderate: Notable improvements or additions"
+echo "4. Significant: Major features or important fixes"
+echo -e "5. Critical: Crucial updates or milestone achievements\n"
 
 commit_message=$(get_commit_importance) # call function
 git commit -m "$commit_message"

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os
+import os, sys, time
 import json
 from termcolor import colored
 
@@ -140,44 +140,55 @@ def main():
     checklist = InteractiveChecklist()
 
     while True:
-        os.system('cls' if os.name == 'nt' else 'clear')  # Clear the console
-        checklist.print_checklist()
-        print(colored("\nOptions:", 'yellow', attrs=['bold']))
-        print("1. Toggle task completion")
-        print("2. Add new task")
-        print("3. Remove task")
-        print("4. Exit")
+        try:
+            os.system('cls' if os.name == 'nt' else 'clear')  # Clear the console
+            checklist.print_checklist()
+            print(colored("\nOptions:", 'yellow', attrs=['bold']))
+            print("1. Toggle task completion")
+            print("2. Add new task")
+            print("3. Remove task")
+            print("4. Exit")
 
-        choice = input(colored("\nEnter your choice (1-4): ", 'yellow'))
+            choice = input(colored("\nEnter your choice (1-4): ", 'yellow'))
 
-        if choice == '1':
-            task_number = int(input("Enter task number: "))
-            if checklist.toggle_task(task_number):
-                print(colored("Task toggled successfully!", 'green'))
+            if choice == '1':
+                task_number = int(input("Enter task number: "))
+                if checklist.toggle_task(task_number):
+                    print(colored("Task toggled successfully!", 'green'))
+                else:
+                    print(colored("Invalid task number.", 'red'))
+
+            elif choice == '2':
+                category = input("Enter category (existing or new): ")
+                task = input("Enter new task: ")
+                checklist.add_task(category, task)
+                print(colored("Task added successfully!", 'green'))
+
+            elif choice == '3':
+                task_number = int(input("Enter task number to remove: "))
+                if checklist.remove_task(task_number):
+                    print(colored("Task removed successfully!", 'green'))
+                else:
+                    print(colored("Invalid task number.", 'red'))
+
+            elif choice == '4':
+                print(colored("Exiting. Your checklist has been saved.", 'yellow'))
+                break
+
             else:
-                print(colored("Invalid task number.", 'red'))
+                print(colored("Invalid choice. Please try again.", 'red'))
 
-        elif choice == '2':
-            category = input("Enter category (existing or new): ")
-            task = input("Enter new task: ")
-            checklist.add_task(category, task)
-            print(colored("Task added successfully!", 'green'))
-
-        elif choice == '3':
-            task_number = int(input("Enter task number to remove: "))
-            if checklist.remove_task(task_number):
-                print(colored("Task removed successfully!", 'green'))
-            else:
-                print(colored("Invalid task number.", 'red'))
-
-        elif choice == '4':
-            print(colored("Exiting. Your checklist has been saved.", 'yellow'))
-            break
-
-        else:
-            print(colored("Invalid choice. Please try again.", 'red'))
-
-        input("\nPress Enter to continue...")
+            input("\nPress Enter to continue...")
+        except KeyboardInterrupt: # Handle Ctrl+C to exit the program
+            os.system('clear')
+            print("\nExiting...")
+            time.sleep(.75)
+            os.system('clear')
+            sys.exit()
+            
+    
+    # handle ctrl+c
+    
 
 if __name__ == "__main__":
     main()
