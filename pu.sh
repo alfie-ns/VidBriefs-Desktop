@@ -21,7 +21,6 @@ get_commit_importance() { # read user input into importance variable
 }
 
 # Main script --------------------------------------------
-cd .. # backtrack out of git/ to main directory
 git add .
 
 print_bold "\nCommit importance:"
