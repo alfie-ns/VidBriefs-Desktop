@@ -3,6 +3,12 @@
 
 # VidBriefs-Desktop/AI-Scripts/nexus.py
 
+'''
+Nexus is an AI assistant that can communicate with users, 
+and search the web for relevant information,
+
+'''
+
 # Dependencies ------------------------------------------------------------------
 import time,sys,re,os
 from dotenv import load_dotenv
@@ -56,8 +62,6 @@ has been shortened.
 In mathematics, truncation can also refer to reducing the number of digits in a number,
 either by cutting off digits after a certain point (e.g., truncating the decimal part of
 a number) or by rounding down to a specific place value.
-
-The function truncates the output to clean away the unnecessary 'machine logic'
 
 it truncates the output to a maximum length of 3000 characters and adds an ellipsis;
 this is let the user know that the content has been truncated/shortened. It shortens
@@ -277,7 +281,7 @@ def chat_with_ai(messages, personality, ai_model, allow_web_search=False, allow_
         except Exception as e:
             return f"Error communicating with GPT: {str(e)}"
     elif ai_model == "claude":
-        try: # this line of code will ransform or filter the original messages list to create a format that the claude_client can use
+        try: # this line of code will transform or filter the original messages list to create a format that the claude_client can use
             claude_messages = [{"role": m['role'], "content": m['content']} for m in messages]
             response = claude_client.messages.create(
                 model="claude-3-sonnet-20240229",

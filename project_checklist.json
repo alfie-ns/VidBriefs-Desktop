@@ -1,0 +1,54 @@
+{
+  "Project Tasks": [
+    {
+      "task": "youtube.py",
+      "completed": true
+    },
+    {
+      "task": "tedtalk.py",
+      "completed": true
+    },
+    {
+      "task": "tedtalk2",
+      "completed": true
+    },
+    {
+      "task": "nexus.py",
+      "completed": true
+    },
+    {
+      "task": "Fix web browsing",
+      "completed": true
+    },
+    {
+      "task": "Make up-to-date web browsing",
+      "completed": true
+    },
+    {
+      "task": "nexus2(make it make a title for the respective file)",
+      "completed": false
+    },
+    {
+      "task": "Improve prompt-engineering for nexus, particulary on it's searching being impressive, fast and effectively, making sure nothings getting missed out",
+      "completed": false
+    },
+    {
+      "task": "sight.py",
+      "completed": true
+    },
+    {
+      "task": "news.py (news-api)",
+      "completed": false
+    },
+    {
+      "task": "mit.py",
+      "completed": false
+    }
+  ],
+  "new": [
+    {
+      "task": "eat",
+      "completed": false
+    }
+  ]
+}
