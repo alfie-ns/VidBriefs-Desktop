@@ -6,7 +6,7 @@ Get your OpenAI API key from: https://platform.openai.com/api-keys
 
 ## 2-bash. Create Environment for API Key
 
-Run the following bash in the scripts/ directory:
+Run the following bash script in the scripts/ directory:
 
 ```
 ./scripts/create-env.sh
@@ -30,7 +30,7 @@ OPENAI_API_KEY=your-api-key-here
 
 ## 3. Create Virtual Environment
 
-In the root directory, run:
+In the repository's root directory, run:
 
 ```
 python -m venv venv
