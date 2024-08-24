@@ -368,20 +368,53 @@ def intelligent_code_analysis(user_input, ai_model, personality):
     return analysis
 
 # Markdown File Generation -----------------------------------------------------
-def generate_markdown_file(content, title):
+def generate_markdown_file(content, title=None):
+    """Generate a Markdown file with the given content and title."""
     folder_name = "Markdown"
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
     
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"{title}_{timestamp}.md"
+    # Here's where we correctly call the new function
+    filename = generate_markdown_filename(content, title)
+    
     file_path = os.path.join(folder_name, filename)
     
     with open(file_path, 'w', encoding='utf-8') as f:
-        f.write(f"# {title}\n\n")
         f.write(content)
     
     return file_path
+
+def generate_markdown_filename(content, title=None):
+    """
+    Generate a descriptive filename for markdown content.
+    
+    :param content: The content of the markdown file
+    :param title: An optional title for the content
+    :return: A string containing the generated filename
+    """
+    # If no title is provided, try to extract one from the content
+    if not title:
+        # Look for the first heading in the content
+        match = re.search(r'^#\s*(.+)$', content, re.MULTILINE)
+        if match:
+            title = match.group(1)
+        else:
+            # If no heading, use the first line (truncated)
+            title = content.split('\n')[0][:50]
+    
+    # Clean the title to make it filename-friendly
+    clean_title = re.sub(r'[^\w\s-]', '', title.lower())
+    clean_title = re.sub(r'\s+', '-', clean_title)
+    
+    # Truncate the title if it's too long
+    max_title_length = 50
+    if len(clean_title) > max_title_length:
+        clean_title = clean_title[:max_title_length].rstrip('-')
+    
+    # Add a timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    return f"{clean_title}_{timestamp}.md"
 
 # ------------------------------------------------------------------------------
 # Main 🟥 ----------------------------------------------------------------------
@@ -457,10 +490,24 @@ def main():
         
         if allow_analysis:
             # ----------------- Code Analysis ---------------------
-            analysis_decision_prompt = f"""Given the user input: "{user_input}"
-            Decide if this input requires code analysis and execution.
-            Respond with only "Yes" or "No"."""
-            
+            analysis_decision_prompt = f"""
+            Given the input: "{user_input}", respond with "Yes" if it meets ANY of these:
+            1. Requests Python code or scripts.
+            2. Involves math operations or calculations.
+            3. Asks for data manipulation or analysis.
+            4. Mentions programming concepts (e.g., function, loop, algorithm).
+            5. Can be solved with code.
+
+            Examples that should return "Yes":
+            - "Write a Python script for prime numbers."
+            - "Sort a list in descending order."
+            - "Calculate the average of 10, 15, 20."
+            - "Create a palindrome function."
+            - "Find duplicates in a list."
+
+            Respond ONLY with "Yes" or "No".
+            """
+            # quickly ask the ai if it should run python
             analysis_decision = chat_with_ai([{"role": "user", "content": analysis_decision_prompt}], personality, ai_model, False, False).strip().lower()
 
             if analysis_decision == "yes":
@@ -477,9 +524,8 @@ def main():
         messages.append({"role": "assistant", "content": response})
 
         if len(response.split()) > 100:
-            title = f"Response_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-            file_path = generate_markdown_file(response, title)
-            print(green(f"\nExtensive response saved as: {file_path}"))
+            file_path = generate_markdown_file(response)
+            print(green(f"\nresponse saved as: {file_path}"))
 
 if __name__ == "__main__":
     main()
