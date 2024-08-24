@@ -1,6 +1,9 @@
 - [X] Get Ted Talk summarisations working
 - [X] Improve vidbriefs-desktop to generate a markdown file for video summaries and paste them in 'Markdown' folder
 - [ ] ai-scripts/copy-all-scripts.sh
+- [ ] go improve the code
+
+- [ ] make nexus create an account on a login page
 
 insights to extrapolate:
 
