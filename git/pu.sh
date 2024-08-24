@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Function to print bold text
+# Function to print bold text -----------------------------
 print_bold() {
   BOLD=$(tput bold)
   NORMAL=$(tput sgr0)
@@ -10,7 +10,7 @@ print_bold() {
 # Function to get commit importance
 get_commit_importance() { # read user input into importance variable
     read -p "Enter the number (1-5): " importance
-    case $importance in
+    case $importance in # importance cases
         1) echo "Trivial: Typos, formatting, or very minor changes";;
         2) echo "Minor: Small changes, fixes, or updates";;
         3) echo "Moderate: Notable improvements or additions";;
@@ -21,7 +21,7 @@ get_commit_importance() { # read user input into importance variable
 }
 
 # Main script --------------------------------------------
-cd .. # backtrack to main directory
+cd .. # backtrack out of git/ to main directory
 git add .
 
 print_bold "\nCommit importance:"
