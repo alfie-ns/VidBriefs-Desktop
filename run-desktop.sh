@@ -4,7 +4,7 @@
 exit_script() {
     clear
     echo "Exiting..."
-    sleep 0.25 # wait for a quarter of a second
+    sleep 0.5 # wait for half a second
     clear
     exit 0 # exit successfully
 }
@@ -36,20 +36,19 @@ fi
 
 # Function to display the menu
 display_menu() {
-    echo "╔════════════════════════════════════════╗"
-    echo "║            VidBriefs-Desktop           ║"
-    echo "╠════════════════════════════════════════╣"
-    echo "║ 1. YouTube Transcript AI Assistant     ║"
-    echo "║ 2. Enhanced AI Chatbot Assistant(Nexus)║"
-    echo "║ 3. TED Talk Analysis Assistant         ║"
-    echo "║ 4. Sight Repo Assistant                ║"
-    echo "║ 5. Huberman.py                         ║"
-    echo "╠════════════════════════════════════════╣"
-    echo "║ 6. Categorise your insights            ║"
-    echo "╠════════════════════════════════════════╣"
-    echo "║ 7. Exit                                ║"
-    echo "╚════════════════════════════════════════╝"
-    echo "Enter your choice (1-7) or press Shift+C to exit: "
+    echo "╔══════════════════════════════════════════════╗"
+    echo "║              VidBriefs-Desktop               ║"
+    echo "╠══════════════════════════════════════════════╣"
+    echo "║ 1. 🌟 Enhanced AI Assistant (Nexus)          ║"
+    echo "╠══════════════════════════════════════════════╣"
+    echo "║ 2. YouTube Transcript AI Assistant           ║"
+    echo "║ 3. TED Talk Analysis Assistant               ║"
+    echo "║ 4. Sight Repo Assistant                      ║"
+    echo "║ 5. Huberman.py                               ║"
+    echo "╠══════════════════════════════════════════════╣"
+    echo "║ 6. Categorize your insights                  ║"
+    echo "╚══════════════════════════════════════════════╝"
+    echo "Enter your choice (1-6) or press Ctrl+C to exit:"
 }
 # Main loop -------------------------------------
 while true; do
@@ -61,17 +60,18 @@ while true; do
         if [[ $input == "[C" ]]; then # detect Shift+C (right arrow key)
             exit_script
         fi
+
     elif [[ $input =~ ^[1-6]$ ]]; then
         echo $input # echo the input so the user can see what they've chosen
         case $input in
-            1)
-                echo -e "\nLaunching YouTube Transcript AI Assistant...\n"
-                python3 AI-Scripts/youtube.py
-                ;;
-            2)
+            1)  
                 echo -e "\nLaunching Nexus (Enhanced AI Chatbot Assistant)...\n"
                 python3 AI-Scripts/nexus.py
                 ;;
+            2)
+                echo -e "\nLaunching YouTube Transcripts AI Assistant...\n"
+                python3 AI-Scripts/youtube.py
+                ;; 
             3)
                 echo -e "\nLaunching TED Talk Analysis Assistant...\n"
                 python3 AI-Scripts/tedtalk.py
@@ -89,10 +89,9 @@ while true; do
                 echo -e "\nCategorising the .md files...\n"
                 python3 catergorise.py
                 ;;
-            7)
-                exit_script
-                ;;
         esac
+
+        
 
         # Pause before clearing the screen and showing the menu again
         echo

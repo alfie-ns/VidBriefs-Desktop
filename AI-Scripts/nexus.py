@@ -454,8 +454,9 @@ def main():
         print(blue("\nThinking..."))
         response = chat_with_ai(messages, personality, ai_model, allow_web_search, allow_analysis)
         
-        # ----------------- Code Analysis ---------------------
+        
         if allow_analysis:
+            # ----------------- Code Analysis ---------------------
             analysis_decision_prompt = f"""Given the user input: "{user_input}"
             Decide if this input requires code analysis and execution.
             Respond with only "Yes" or "No"."""

@@ -105,7 +105,6 @@ def chat_with_ai(messages, personality, ai_model, ted_talk_title, talk_number=No
         return "Invalid AI model selected."
 
 # TED Talk Processing Functions -------------------------------------------------
-
 def generate_system_message(personality):
     base_message = "You are an AI assistant helping with TED talk analysis."
     personality_traits = parse_personality(personality)
@@ -237,7 +236,6 @@ def parse_ai_recommendations(ai_response):
     if current_talk:
         recommendations.append((current_talk, current_explanation.strip()))
     return recommendations
-
 
 def get_ted_talk_content(talk_title): # --Systematic Traversal--
     """Fetch and return the content of a TED talk given its title."""
@@ -446,7 +444,7 @@ def main():
             if recommended_talks:
                 print(green("\nRecommended TED Talks based on your interests:"))
             else:
-                print(yellow("\nNo talks matched your interests. Here are some random selections:"))
+                #print(yellow("\nNo talks matched your interests. Here are some random selections:"))
                 recommended_talks = random.sample(all_talks, min(3, len(all_talks)))
         else:
             recommended_talks = random.sample(all_talks, min(3, len(all_talks)))
