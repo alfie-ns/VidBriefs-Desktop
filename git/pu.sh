@@ -23,7 +23,7 @@ get_commit_importance() {
 cd .. # backtrack to main directory
 git add .
 
-echo -e "\nCommit importance:"
+print_bold "\nCommit importance:"
 echo "1. Minor: Small changes, fixes, or updates"
 echo "2. Significant: New features, major improvements, or important fixes"
 echo -e "3. Working: Newest fully-working version\n"
