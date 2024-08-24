@@ -469,6 +469,7 @@ def main():
                 print(blue("\nAnalyzing and executing code..."))
                 response = intelligent_code_analysis(user_input, ai_model, personality)
             else:
+                #print(yellow("\nCode analysis not required."))
                 response = chat_with_ai([{"role": "user", "content": user_input}], personality, ai_model, allow_web_search, allow_analysis)
 
         else:

@@ -4,7 +4,7 @@
 - [X] nexus.py
 - [X] Fix web browsing
 - [X] Make up-to-date web browsing
-- [ ] nexus2(make it make a title for the respective file)
+- [ ] nexus2(make it make a title for the respective file, make it work wusing both functionalities
 - [ ] Improve prompt-engineering for nexus, particulary on it's searching being impressive, fast and effectively, making sure nothings getting missed out
 - [X] sight.py
 - [ ] news.py (news-api)
