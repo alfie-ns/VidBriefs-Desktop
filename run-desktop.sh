@@ -4,7 +4,7 @@
 exit_script() {
     clear
     echo "Exiting..."
-    sleep 0.25 # wait for 0.25 seconds
+    sleep 0.25 # wait for a quarter of a second
     clear
     exit 0 # exit successfully
 }
@@ -54,7 +54,7 @@ display_menu() {
 # Main loop -------------------------------------
 while true; do
     display_menu
-    read -rsn1 input # read a single character without echoing to the terminal
+    read -rsn1 input # read a single character immediately without waiting for Enter
 
     if [[ $input == $'\x1B' ]]; then # detect escape sequence
         read -rsn2 input # read the next two characters

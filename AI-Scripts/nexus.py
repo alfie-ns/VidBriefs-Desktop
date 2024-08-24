@@ -5,7 +5,7 @@
 
 '''
 Nexus is an AI assistant that can communicate with users, 
-and search the web for relevant information,
+and search the web for relevant information, also
 
 '''
 
@@ -22,11 +22,13 @@ from bs4 import BeautifulSoup
 import threading
 from urllib.parse import urlparse
 from urllib.parse import quote_plus
+from contextlib import redirect_stdout
+import io
 
 # Load environment variables
 load_dotenv()
 
-# Initialize API clients
+# Initialise API clients
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 claude_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
@@ -68,7 +70,7 @@ this is let the user know that the content has been truncated/shortened. It shor
 to reduce an overload of information and to keep the output concise and readable.
 '''
 
-# Enhanced Web browsing functionality ----------------------------------------------
+# Enhanced Web browsing functionality ------------------------------------------
 def search_and_browse(query):
     """
     Intelligently search for relevant websites based on the query and browse the most relevant ones.
@@ -117,7 +119,7 @@ def generate_search_terms(query):
 
 def perform_search(search_url):
     """Perform a search and return the results."""
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+    headers = {'User-Agent': 'Mosilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
     
     try:
         response = requests.get(search_url, headers=headers, timeout=10)
@@ -136,6 +138,7 @@ def perform_search(search_url):
     except Exception as e:
         print(f"Error during search: {str(e)}")
         return []
+
 def browse_website(url):
     """
     Browse a website and extract relevant content.
@@ -144,7 +147,7 @@ def browse_website(url):
     :return: Extracted content from the website
     """
     try:
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+        headers = {'User-Agent': 'Mosilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
         response = requests.get(url, headers=headers, timeout=10)
         soup = BeautifulSoup(response.text, 'html.parser')
         
@@ -186,31 +189,31 @@ def extract_main_content(soup):
     # Join the extracted text
     return "\n\n".join(content)
 
-def summarize_content(content, max_length=1500):
+def summarise_content(content, max_length=1500):
     """
-    Summarize the content to a specified maximum length.
+    Summarise the content to a specified maximum length.
     
-    :param content: Original content to summarize
+    :param content: Original content to summarise
     :param max_length: Maximum length of the summary
-    :return: Summarized content
+    :return: Summarised content
     """
     if len(content) <= max_length:
         return content
     
-    # Simple summarization by keeping the first few sentences
-    sentences = re.split(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?)\s', content)
+    # Simple summarisation by keeping the first few sentences
+    sentences = re.split(r'(?<!\w\.\w.)(?<![A-s][a-s]\.)(?<=\.|\?)\s', content)
     summary = ""
     for sentence in sentences:
         if len(summary) + len(sentence) > max_length:
             break
         summary += sentence + " "
     
-    return summary.strip() + "...\n\n(Content summarized due to length)"
+    return summary.strip() + "...\n\n(Content summarised due to length)"
 
 def search_relevant_links(query, num_links=3):
     search_url = f"https://www.google.com/search?q={quote_plus(query)}"  # Encode query for safe inclusion in URL
 
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+    headers = {'User-Agent': 'Mosilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
     
     try:
         response = requests.get(search_url, headers=headers, timeout=10)
@@ -227,45 +230,69 @@ def search_relevant_links(query, num_links=3):
         print(red(f"Error searching for links: {str(e)}"))
         return []
 
-# AI Communication Function -----------------------------------------------------
+# AI System -------------------------------------------------------------------
+
+def execute_python_code(code):
+    """
+    Execute Python code and return the output.
+    """
+    buffer = io.StringIO()
+    with redirect_stdout(buffer):
+        try:
+            exec(code, {})
+        except Exception as e:
+            print(f"Error: {str(e)}")
+    return buffer.getvalue()
+
 def chat_with_ai(messages, personality, ai_model, allow_web_search=False, allow_analysis=False):
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     current_year = datetime.now().year
     
-    system_message = f"""You are a {personality} AI assistant. Provide helpful and engaging responses. 
-    If web search is allowed, use the provided search results and browsed content to inform your answers.
-    Always cite your sources when using information from web searches.
-    
-    IMPORTANT: The current date and time is {current_time}, and the current year is {current_year}. 
-    This information overrides any dates found in web search results. When discussing current events 
-    or recent information, always refer to this current date and year as the present, and adjust your 
-    responses accordingly.
+    system_message = f"""
+    You are a {personality} AI assistant, designed to provide helpful, engaging, and accurate responses. Your base knowledge cutoff is April 2023, but you have additional capabilities to access more current information.
+
+    CORE INSTRUCTIONS:
+    1. Provide accurate and up-to-date information, utilising web search when enabled.
+    2. Maintain the specified personality in your responses.
+    3. Be concise for simple queries and elaborate when necessary.
+    4. Always consider the current date ({current_time}) when discussing recent events or information.
+
+    CAPABILITIES:
+    - Web Search: {'' if allow_web_search else 'Not '}Enabled. 
+      {f"You can access current information up to {current_time}. Always adjust information to be relative to the current year {current_year}." if allow_web_search else "Rely on your existing knowledge base."}
+    - Code Analysis: {'' if allow_analysis else 'Not '}Enabled. 
+      {f"You can analyse, interpret, and suggest Python code when appropriate." if allow_analysis else "Avoid in-depth code analysis."}
+    - Real-time Updates: When web search is enabled, you can provide up-to-date information on current events and recent developments.
+
+    RESPONSE STRUCTURE:
+    1. Address the query directly and concisely.
+    2. If web search is used, integrate the information seamlessly, citing sources when appropriate.
+    3. For code-related queries (if enabled):
+       a. Suggest appropriate Python code to address the query.
+       b. Present the code within a Python code block.
+       c. Explain the code's functionality and how it addresses the user's query.
+    4. Provide additional context or explanation if beneficial.
+    5. Suggest follow-up questions or areas for further exploration when appropriate.
+
+    Remember, your primary goal is to assist the user effectively while adhering to these guidelines. Utilise your capabilities to provide the most accurate and helpful information possible.
     """
     
     if allow_web_search:
-        system_message += f" You have the ability to search the web for information when needed. When asked about current events or recent information, use your web browsing capability to provide up-to-date information, but always adjust the information to be relative to the current year {current_year}. When you receive web content, analyze and summarize it concisely, ensuring you're referring to the most recent information available, updated to the current year when necessary."
+        system_message += f" You have the ability to search the web for information when needed. When asked about current events or recent information, use your web browsing capability to provide up-to-date information. The current date and time is {current_time}, and the current year is {current_year}. When you receive web content, analyse and summarise it concisely, ensuring you're referring to the most recent information available."
+
+        if len(messages) > 0:
+            last_message = messages[-1]['content']
+            search_results, browsed_content = search_and_browse(last_message)
+            
+            if search_results:
+                system_message += f"\n\nSearch Results:\n"
+                for i, result in enumerate(search_results, 1):
+                    system_message += f"{i}. {result['title']} - {result['url']}\n"
+            
+            if browsed_content:
+                summarised_content = summarise_content(browsed_content)
+                system_message += f"\n\nBrowsed Content:\n{summarised_content}"
     
-    if allow_analysis:
-        system_message += " You can analyse and interpret code when requested."
-    
-    if allow_web_search and len(messages) > 0:
-        last_message = messages[-1]['content']
-        search_results, browsed_content = search_and_browse(last_message)
-        
-        if search_results:
-            system_message += f"\n\nSearch Results:\n"
-            for i, result in enumerate(search_results, 1):
-                system_message += f"{i}. {result['title']} - {result['url']}\n"
-        
-        if browsed_content:
-            summarized_content = summarize_content(browsed_content)
-            system_message += f"\n\nBrowsed Content:\n{summarized_content}"
-    
-    
-    if allow_web_search:
-        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        current_year = datetime.now().year
-        system_message += f" You have the ability to search the web for information when needed. When asked about current events or recent information, use your web browsing capability to provide up-to-date information. The current date and time is {current_time}, and the current year is {current_year}. When you receive web content, analyze and summarize it concisely, ensuring you're referring to the most recent information available."
     if allow_analysis:
         system_message += " You can analyse and interpret code when requested."
     
@@ -307,6 +334,43 @@ def chat_with_ai(messages, personality, ai_model, allow_web_search=False, allow_
     
     return ai_response
 
+def intelligent_code_analysis(user_input, ai_model, personality):
+    code_query = re.sub(r'^(an[ae]ly[sz]e):\s*', '', user_input, flags=re.IGNORECASE).strip()
+    
+    code_generation_prompt = f"""Given the user input: "{code_query}"
+    Generate Python code to solve this problem or answer this query.
+    The code should be executable and print the result.
+    Provide only the Python code, without any explanations or markdown formatting."""
+    
+    generated_code = chat_with_ai([{"role": "user", "content": code_generation_prompt}], personality, ai_model, False, True)
+    
+    print(blue("\nGenerated Python code:"))
+    print(generated_code)
+    
+    execution_result = execute_python_code(generated_code)
+    
+    print(blue("\nExecution result:"))
+    print(execution_result)
+
+    analysis_prompt = f"""User input: {code_query}
+    Generated and executed Python code:
+    ```python
+    {generated_code}
+    ```
+    Execution result:
+    {execution_result}
+
+    Please provide an analysis of this code and its execution, including:
+    1. Explanation of how the code addresses the user's query
+    2. Breakdown of the code's functionality
+    3. Interpretation of the execution result
+    4. Any relevant Python or domain-specific concepts used"""
+
+    analysis = chat_with_ai([{"role": "user", "content": analysis_prompt}], personality, ai_model, False, True)
+    return analysis
+
+# Markdown File Generation -----------------------------------------------------
+
 def generate_markdown_file(content, title):
     folder_name = "Markdown"
     if not os.path.exists(folder_name):
@@ -334,7 +398,7 @@ def main():
         print(red("Invalid choice. Please enter 'gpt' or 'claude'."))
         ai_model = input(bold("Choose your AI model (gpt/claude): ")).strip().lower()
 
-    personality = input(bold("Customize Assistant Personality (press Enter for default): ")).strip()
+    personality = input(bold("Customise Assistant Personality (press Enter for default): ")).strip()
     personality = personality or "BALANCED 🧠 ANALYTICAL-🎨 CREATIVE with MEDIUM 🤝 EMPATHETIC approach"
 
     allow_web_search = input(bold("Allow intelligent web browsing? (y/n): ")).strip().lower() == 'y'
@@ -346,7 +410,7 @@ def main():
     print("\nType 'exit' to quit, 'restart' to start over, or enter your query.")
     print("The AI will intelligently decide what to search based on your input.")
     print("For direct web browsing, start your query with 'browse:'")
-    print("For code analysis, start your query with 'analyze:'")
+    print("For code analysis, make sure to make it clear that's what you want it to do.\n")
 
     messages = []  # initialise message list
 
@@ -382,24 +446,35 @@ def main():
                         print(f"{i}. {result['title']} - {result['url']}")
             
             print(green("\nWeb Browsing Result:"))
-            print(summarize_content(web_result))
+            print(summarise_content(web_result))
             messages.append({
                 "role": "system", 
                 "content": f"Web search and browsing results for '{user_input}':\n\n{web_result}\n\nPlease use this information to inform your response."
             })
 
-        if allow_analysis and user_input.lower().startswith("analyze:"):
-            code_to_analyze = user_input[8:].strip()  # Remove "analyze:" from the start
-            print(blue("\nAnalyzing code..."))
-            analysis_request = f"Please analyze and interpret the following code:\n\n{code_to_analyze}"
-            messages.append({"role": "user", "content": analysis_request})
-        else:
-            messages.append({"role": "user", "content": user_input})
+        messages.append({"role": "user", "content": user_input})
 
         print(blue("\nThinking..."))
         response = chat_with_ai(messages, personality, ai_model, allow_web_search, allow_analysis)
         
-        print(bold(red("\nAssistant: ")) + response)
+        # ----------------- Code Analysis ---------------------
+        if allow_analysis:
+            analysis_decision_prompt = f"""Given the user input: "{user_input}"
+            Decide if this input requires code analysis and execution.
+            Respond with only "Yes" or "No"."""
+            
+            analysis_decision = chat_with_ai([{"role": "user", "content": analysis_decision_prompt}], personality, ai_model, False, False).strip().lower()
+
+            if analysis_decision == "yes":
+                print(blue("\nAnalyzing and executing code..."))
+                response = intelligent_code_analysis(user_input, ai_model, personality)
+            else:
+                response = chat_with_ai([{"role": "user", "content": user_input}], personality, ai_model, allow_web_search, allow_analysis)
+
+        else:
+            response = chat_with_ai([{"role": "user", "content": user_input}], personality, ai_model, allow_web_search, allow_analysis)
+
+        print(bold(green("\nAssistant: ")) + response)
         messages.append({"role": "assistant", "content": response})
 
         if len(response.split()) > 100:
