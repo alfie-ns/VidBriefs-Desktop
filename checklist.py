@@ -76,24 +76,9 @@ project_improvements = {
         {"task": "nexus.py", "completed": True},
         {"task": "Fix web browsing", "completed": True},
         {"task": "Make up-to-date web browsing", "completed": True},
-        {"task": "nexus2(make it make a title for the respective file)", "completed": False},
-        {"task": "Improve prompt-engineering for nexus, particulary on it's searching being impressive, fast and effectively, making sure nothings getting missed out", "completed": False},
-        {"task": "sight.py", "completed": True},
-        {"task": "news.py (news-api)", "completed": False},
-        {"task": "mit.py", "completed": False}
-    ]
-}
-
-project_improvements = {
-    "Project Tasks": [
-        {"task": "youtube.py", "completed": True},
-        {"task": "tedtalk.py", "completed": True},
-        {"task": "tedtalk2", "completed": True},
-        {"task": "nexus.py", "completed": True},
-        {"task": "Fix web browsing", "completed": True},
-        {"task": "Make up-to-date web browsing", "completed": True},
-        {"task": "nexus2(make it make a title for the respective file)", "completed": False},
-        {"task": "Improve prompt-engineering for nexus, particulary on it's searching being impressive, fast and effectively, making sure nothings getting missed out", "completed": False},
+        {"task": "nexus2(make it make a title for the respective file, make it work using both functionalities, analysis)", "completed": True},
+        {"task": "Nexus3(data visualization, creating and running data GUIs)", "completed": False},
+        {"task": "Improve prompt-engineering for nexus, particularly on its searching being impressive, fast and effectively, making sure nothing's getting missed out", "completed": True},
         {"task": "sight.py", "completed": True},
         {"task": "news.py (news-api)", "completed": False},
         {"task": "mit.py", "completed": False}
@@ -128,12 +113,13 @@ class InteractiveChecklist:
                 task = colored(item['task'], 'green') if item['completed'] else item['task']
                 print(f"{checkbox} {i}. {task}")
 
-    def toggle_task(self, category, task_number):
-        if category in self.improvements and 1 <= task_number <= len(self.improvements[category]):
-            item = self.improvements[category][task_number - 1]
-            item['completed'] = not item['completed']
-            self.save_checklist()
-            return True
+    def toggle_task(self, task_number):
+        for category, items in self.improvements.items():
+            if 1 <= task_number <= len(items):
+                item = items[task_number - 1]
+                item['completed'] = not item['completed']
+                self.save_checklist()
+                return True
         return False
 
     def add_task(self, category, task):
@@ -142,11 +128,12 @@ class InteractiveChecklist:
         self.improvements[category].append({"task": task, "completed": False})
         self.save_checklist()
 
-    def remove_task(self, category, task_number):
-        if category in self.improvements and 1 <= task_number <= len(self.improvements[category]):
-            del self.improvements[category][task_number - 1]
-            self.save_checklist()
-            return True
+    def remove_task(self, task_number):
+        for category, items in self.improvements.items():
+            if 1 <= task_number <= len(items):
+                del items[task_number - 1]
+                self.save_checklist()
+                return True
         return False
 
 def main():
@@ -164,12 +151,11 @@ def main():
         choice = input(colored("\nEnter your choice (1-4): ", 'yellow'))
 
         if choice == '1':
-            category = input("Enter category: ")
             task_number = int(input("Enter task number: "))
-            if checklist.toggle_task(category, task_number):
+            if checklist.toggle_task(task_number):
                 print(colored("Task toggled successfully!", 'green'))
             else:
-                print(colored("Invalid category or task number.", 'red'))
+                print(colored("Invalid task number.", 'red'))
 
         elif choice == '2':
             category = input("Enter category (existing or new): ")
@@ -178,12 +164,11 @@ def main():
             print(colored("Task added successfully!", 'green'))
 
         elif choice == '3':
-            category = input("Enter category: ")
             task_number = int(input("Enter task number to remove: "))
-            if checklist.remove_task(category, task_number):
+            if checklist.remove_task(task_number):
                 print(colored("Task removed successfully!", 'green'))
             else:
-                print(colored("Invalid category or task number.", 'red'))
+                print(colored("Invalid task number.", 'red'))
 
         elif choice == '4':
             print(colored("Exiting. Your checklist has been saved.", 'yellow'))
