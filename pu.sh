@@ -17,7 +17,7 @@ get_commit_importance() {
         3) echo "Moderate";;
         4) echo "Significant";;
         5) echo "Milestone";;
-        *) echo "Invalid choice. Using 'Minor' as default."; echo "Minor: Small changes, fixes, or updates";;
+        *) echo "Minor";;  # Use only the label without extra text
     esac # end case
 }
 
@@ -46,7 +46,7 @@ it in 'importance' variable.
 -rsnl means:
 -r: Raw input (disables interpretation of backslash escapes)
 -s: Silent mode (don't echo characters back to the terminal)
--n: Take in one character before returning/accepting input
+-n1: Take in one character (1) before returning/accepting input
 This allows for immediate, single-character input without pressing Enter.
 
 -rsnl?
