@@ -28,7 +28,7 @@ echo "1. Trivial: Typos, formatting, or very minor changes"
 echo "2. Minor: Small changes, fixes, or updates"
 echo "3. Moderate: Notable improvements or additions"
 echo "4. Significant: Major features or important fixes"
-echo -e "5. Critical: Crucial updates or milestone achievements\n"
+echo -e "5. Milestone: Crucial updates or milestone achievements\n"
 
 commit_message=$(get_commit_importance) # call function
 git commit -m "$commit_message"
