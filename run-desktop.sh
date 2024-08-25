@@ -46,7 +46,8 @@ display_menu() {
     echo "║ 4. Sight Repo Assistant                      ║"
     echo "║ 5. Huberman.py                               ║"
     echo "╠══════════════════════════════════════════════╣"
-    echo "║ 6. Categorize your insights                  ║"
+    echo "║ 6. YouTube Transcript Printer                ║"
+    echo "║ 7. Categorise your insights                  ║"
     echo "╚══════════════════════════════════════════════╝"
     echo "Enter your choice (1-6) or press Ctrl+C to exit:"
 }
@@ -84,8 +85,12 @@ while true; do
                 echo -e "\nLaunching Huberman.py...\n"
                 python3 AI-Scripts/huberman.py
                 ;;
+            6)
+                echo -e "\nLaunching YouTube Transcript Printer...\n"
+                python3 config/Lex-Huberman/Youtube-Transcript-Printer.py
+                ;;
 
-            6) 
+            7) 
                 echo -e "\nCategorising the .md files...\n"
                 python3 catergorise.py
                 ;;
