@@ -9,8 +9,8 @@ print_bold() {
 
 # Function to get commit importance
 get_commit_importance() {
-      # Prompt for input
-    read -n1p "Enter the importance (1-5): " importance  # Read a single character into 'importance' 
+    echo -n "Enter the importance (1-5): "  # Prompt for input, -n: no newline
+    read -rsn1 importance  # Read a single character into 'importance' 
     case $importance in # importance cases
         1) echo "Trivial";;
         2) echo "Minor";;
