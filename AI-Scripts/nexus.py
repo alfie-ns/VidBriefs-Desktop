@@ -7,6 +7,11 @@
 Nexus is an AI assistant that can communicate with users, 
 and search the web for relevant information, also, can 
 execute python code, but this is just the start.
+
+- [ ] make nexus able to create an account on a login page
+- [ ] make nexus able to search for and find a specific item on a shopping site
+- [ ] make nexus browse the dark web
+- [ ] Make Nexus work for both web-browsing and analysis at the same time
 '''
 
 # Dependencies ------------------------------------------------------------------

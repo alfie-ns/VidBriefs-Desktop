@@ -1,14 +1,3 @@
-'''
-This file will contain the code for the Huberman AI model.
-- [X] get humberman podcast data
-- [X] get huberman lab data
-'''
-
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-# VidBriefs-Desktop/AI-Scripts/huberman.py
-
 import os
 import sys
 import re
@@ -17,8 +6,12 @@ from datetime import datetime
 from dotenv import load_dotenv
 from openai import OpenAI
 import anthropic
-import requests
-from bs4 import BeautifulSoup
+import markdown
+
+'''
+- [ ] Add a function to get relevant parts of the andrew huberman string
+- [ ] make the ai like andrew huberman
+'''
 
 # Load environment variables
 load_dotenv()
@@ -27,7 +20,7 @@ load_dotenv()
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 claude_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
-# Formatting functions
+# Formatting functions (unchanged)
 def supports_formatting():
     return sys.stdout.isatty()
 
@@ -48,15 +41,25 @@ def green(text):
 
 # Huberman Lab data fetching functions
 def fetch_podcast_episodes():
-    # this function needs to go into config/Lex-Huberman and fetch the data from that directory
-    pass
+    episodes = []
+    directory = "config/Lex-Huberman/"
+    for filename in os.listdir(directory):
+        if filename.endswith(".md"):
+            with open(os.path.join(directory, filename), 'r') as file:
+                content = file.read()
+                title = content.split('\n')[0].replace('# ', '')
+                episodes.append({
+                    'title': title,
+                    'filename': filename
+                })
+    return episodes
 
-def fetch_episode_transcript(episode_link):
-    """Fetch the transcript of a specific episode."""
-    response = requests.get(episode_link)
-    soup = BeautifulSoup(response.content, 'html.parser')
-    transcript = soup.find('div', class_='transcript')
-    return transcript.text.strip() if transcript else "Transcript not available."
+def fetch_episode_transcript(filename):
+    with open(os.path.join("config/Lex-Huberman/", filename), 'r') as file:
+        content = file.read()
+        # Remove the title (first line) from the content
+        transcript = '\n'.join(content.split('\n')[1:])
+    return transcript
 
 # AI interaction function
 def chat_with_ai(messages, personality, ai_model):
@@ -66,7 +69,7 @@ def chat_with_ai(messages, personality, ai_model):
         try:
             messages.insert(0, {"role": "system", "content": system_message})
             response = openai_client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-4-mini",
                 messages=messages
             )
             return response.choices[0].message.content
@@ -87,14 +90,41 @@ def chat_with_ai(messages, personality, ai_model):
     else:
         return "Invalid AI model selected."
 
-# Main function ----------------------------------------------------------------
+def select_relevant_transcript(episodes, query):
+    # Simple keyword matching for now
+    for episode in episodes:
+        if any(keyword in episode['title'].lower() for keyword in query.lower().split()):
+            return episode['filename']
+    return episodes[0]['filename']  # Default to first episode if no match
+
+# Main function
 def main():
-    '''
-    The Script will contain th functionality to give insights directly from Andrew Huberman, where th
-    AI is essentially Andrew Huberman himself. It will get the preview of different transcripts in Lex-Huberman/
-    and then decide on what markdown file to traverse to get the insights; then will teach them to the user. 
-    Furthermore, however, the AI will be slightly trained on how Andrew Huberman talks and the answers he gives.
-    '''
+    print(bold("Welcome to the Huberman AI Assistant!"))
+    
+    # Fetch available episodes
+    episodes = fetch_podcast_episodes()
+    
+    while True:
+        user_input = input(blue("\nWhat would you like to know about? (Type 'exit' to quit): "))
+        
+        if user_input.lower() == 'exit':
+            break
+        
+        # Select relevant transcript based on user input
+        relevant_transcript = select_relevant_transcript(episodes, user_input)
+        
+        # Fetch and process the transcript
+        transcript_content = fetch_episode_transcript(relevant_transcript)
+        
+        # Prepare the context for the AI
+        context = f"Based on the following transcript excerpt from Andrew Huberman's podcast, answer the user's question: '{user_input}'\n\nTranscript: {transcript_content[:2000]}..."  # Limit context to avoid token limits
+        
+        # Generate insights using AI
+        # ai_response = chat_with_ai([{"role": "user", "content": context}],
+        #                            "Respond in the style of Andrew Huberman, using scientific terminology and practical advice. Be concise but thorough.",
+        #                            "claude")  # or "gpt"
+        
+        print(green("\nAndrew Huberman AI:"), ai_response)
 
 if __name__ == "__main__":
     main()
