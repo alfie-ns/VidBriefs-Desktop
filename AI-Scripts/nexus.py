@@ -12,6 +12,9 @@ execute python code, but this is just the start.
 - [ ] make nexus able to search for and find a specific item on a shopping site
 - [ ] make nexus browse the dark web
 - [ ] Make Nexus work for both web-browsing and analysis at the same time
+
+[ ] When this all done, begin making a Nexus Android app using Django API. 
+Nexus should be able to do all of the different script's functionalities.
 '''
 
 # Dependencies ------------------------------------------------------------------
