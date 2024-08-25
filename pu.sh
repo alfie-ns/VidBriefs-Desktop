@@ -9,31 +9,33 @@ print_bold() {
 
 # Function to get commit importance
 get_commit_importance() {
+    local importance_text
     while true; do
-        echo -n "Enter the importance (1-5): "
+        echo -n "Enter the importance (1-5): " >&2
         read -rsn1 importance
-        echo  # Print a newline after reading the input
+        echo >&2  # Print a newline after reading the input
 
         case $importance in
-            1) echo "Trivial"; return;;
-            2) echo "Minor"; return;;
-            3) echo "Moderate"; return;;
-            4) echo "Significant"; return;;
-            5) echo "Milestone"; return;;
-            *) echo "Invalid input. Please try again.";;
+            1) importance_text="Trivial"; break;;
+            2) importance_text="Minor"; break;;
+            3) importance_text="Moderate"; break;;
+            4) importance_text="Significant"; break;;
+            5) importance_text="Milestone"; break;;
+            *) echo "Invalid input. Please try again." >&2;;
         esac
     done
+    echo "$importance_text"
 }
 
 # Main script -----------------------------------------------
 git add .
 
-print_bold "\nCommit importance:"
-echo "1. Trivial"
-echo "2. Minor"
-echo "3. Moderate"
-echo "4. Significant"
-echo -e "5. Milestone\n"
+print_bold "\nCommit importance:" >&2
+echo "1. Trivial" >&2
+echo "2. Minor" >&2
+echo "3. Moderate" >&2
+echo "4. Significant" >&2
+echo -e "5. Milestone\n" >&2
 
 # Capture the commit importance
 importance=$(get_commit_importance)
@@ -42,5 +44,5 @@ importance=$(get_commit_importance)
 git commit -m "$importance"
 git push origin main
 
-echo -e '\nLocal repo pushed to remote origin\n'
-print_bold "Commit message: $importance"
+echo -e '\nLocal repo pushed to remote origin\n' >&2
+print_bold "Commit message: $importance" >&2
