@@ -48,16 +48,8 @@ def green(text):
 
 # Huberman Lab data fetching functions
 def fetch_podcast_episodes():
-    """Fetch Huberman Lab podcast episodes from the official website."""
-    url = "https://hubermanlab.com/episodes/"
-    response = requests.get(url)
-    soup = BeautifulSoup(response.content, 'html.parser')
-    episodes = []
-    for episode in soup.find_all('div', class_='episode'):
-        title = episode.find('h2').text.strip()
-        link = episode.find('a')['href']
-        episodes.append({'title': title, 'link': link})
-    return episodes
+    # this function needs to go into config/Lex-Huberman and fetch the data from that directory
+    pass
 
 def fetch_episode_transcript(episode_link):
     """Fetch the transcript of a specific episode."""

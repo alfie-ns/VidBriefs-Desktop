@@ -1,12 +1,21 @@
-- [X] youtube.py
-- [X] tedtalk.py
-- [X] tedtalk2
-- [X] nexus.py
-- [X] Fix web browsing
-- [X] Make up-to-date web browsing
-- [X] nexus2(make it make a title for the respective file, make it work wusing both functionalities, anaylssis)
-- [ ] Nexus3(data visualization, creating and running data guis)
+### Nexus
+
+- [ ] Make it work with both functionalities
+- [X] Web-browsing
+- [ ] Web-browsing2
+- [ ] Python coding2
+- [X] Make it make a title for the respective file
+- [ ] Allow youtube searching
+- [ ] Data visualization
+- [ ] Create and run data guis
 - [X] Improve prompt-engineering for nexus, particulary on it's searching being impressive, fast and effectively, making sure nothings getting missed out
-- [X] sight.py
-- [ ] news.py (news-api)
-- [ ] mit.py
+
+### Youtube
+
+- [X] youtube.py
+- [ ] youtube2.py Where the functionality is it will effectively search for large types of searches eg multiple at a time
+
+### Tedtalk
+
+- [X] tedtalk.py
+- [ ] tedtalk2.py; Where the functionality is it will effectively search for large types of searches eg multiple at a time

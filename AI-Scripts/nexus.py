@@ -53,30 +53,41 @@ def green(text):
 
 # Enhanced Web browsing functionality ------------------------------------------
 def search_and_browse(query):
-    """
-    Intelligently search for relevant websites based on the query and browse the most relevant ones.
-    
-    :param query: User's input (can be a URL or a search query)
-    :return: Tuple of (search_results, browsed_content)
-    """
-    # Check if the query is a valid URL
     if is_valid_url(query):
         return [], browse_website(query)
     
-    # If not a URL, treat as a search query
     search_terms = generate_search_terms(query)
     search_results = []
     browsed_content = ""
+    youtube_results = []
     
-    for term in search_terms:
+    # Use threading to perform searches concurrently
+    def perform_search_thread(term):
+        nonlocal search_results, browsed_content, youtube_results
         search_url = f"https://www.google.com/search?q={quote_plus(term)}"
         results = perform_search(search_url)
         search_results.extend(results)
         
         if results:
             browsed_content += browse_website(results[0]["url"]) + "\n\n"
+        
+        # Add YouTube search
+        youtube_videos = search_youtube_videos(term, max_results=5)
+        youtube_results.extend(youtube_videos)
     
-    return search_results, browsed_content.strip()
+    threads = []
+    for term in search_terms:
+        thread = threading.Thread(target=perform_search_thread, args=(term,))
+        threads.append(thread)
+        thread.start()
+    
+    for thread in threads:
+        thread.join()
+    
+    # Combine all results
+    all_results = search_results + [{"title": f"YouTube: {url}", "url": url} for url in youtube_results]
+    
+    return all_results, browsed_content.strip()
 
 def is_valid_url(url):
     try:
@@ -228,7 +239,33 @@ def search_relevant_links(query, num_links=3):
     except Exception as e:
         print(red(f"Error searching for links: {str(e)}"))
         return []
-
+# YouTube [ ] ---------------------------------------------------------------------
+def search_youtube_videos(query, max_results=100):
+    base_url = "https://www.youtube.com/results"
+    videos = []
+    
+    for i in range(0, max_results, 20):
+        params = {
+            "search_query": query,
+            "sp": "CAI%253D",
+            "start": i
+        }
+        response = requests.get(base_url, params=params)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        video_links = soup.find_all('a', href=re.compile(r'/watch\?v='))
+        
+        for link in video_links:
+            href = link.get('href')
+            if href.startswith('/watch?v='):
+                full_link = f"https://www.youtube.com{href}"
+                if full_link not in videos:
+                    videos.append(full_link)
+                    
+                    if len(videos) >= max_results:
+                        return videos
+    
+    return videos
 # AI System -------------------------------------------------------------------
 def execute_python_code(code):
     """
@@ -247,20 +284,25 @@ def chat_with_ai(messages, personality, ai_model, allow_web_search=False, allow_
     current_year = datetime.now().year
     
     system_message = f"""
-    You are a {personality} AI assistant, designed to provide helpful, engaging, and accurate responses. Your base knowledge cutoff is April 2023, but you have additional capabilities to access more current information.
+    You are a {personality} AI assistant, designed to provide helpful, engaging, and accurate responses.
+    Your base knowledge cutoff is April 2023, but you have additional capabilities to access the web
 
     CORE INSTRUCTIONS:
     1. Provide accurate and up-to-date information, utilising web search when enabled.
     2. Maintain the specified personality in your responses.
     3. Be concise for simple queries and elaborate when necessary.
-    4. Always consider the current date ({current_time}) when discussing recent events or information.
+    4. Use your youtube 
+    5. Always consider the current date ({current_time}) when discussing recent events or information.
 
     CAPABILITIES:
     - Web Search: {'' if allow_web_search else 'Not '}Enabled. 
       {f"You can access current information up to {current_time}. Always adjust information to be relative to the current year {current_year}." if allow_web_search else "Rely on your existing knowledge base."}
+    - YouTube Search: {'' if allow_web_search else 'Not '}Enabled.
+      When web search is enabled, you can also search for and reference relevant YouTube videos.
     - Code Analysis: {'' if allow_analysis else 'Not '}Enabled. 
       {f"You can analyse, interpret, and suggest Python code when appropriate." if allow_analysis else "Avoid in-depth code analysis."}
     - Real-time Updates: When web search is enabled, you can provide up-to-date information on current events and recent developments.
+
 
     RESPONSE STRUCTURE:
     1. Address the query directly and concisely.
@@ -276,7 +318,11 @@ def chat_with_ai(messages, personality, ai_model, allow_web_search=False, allow_
     """
     
     if allow_web_search:
-        system_message += f" You have the ability to search the web for information when needed. When asked about current events or recent information, use your web browsing capability to provide up-to-date information. The current date and time is {current_time}, and the current year is {current_year}. When you receive web content, analyse and summarise it concisely, ensuring you're referring to the most recent information available."
+        system_message += f""" You have the ability to search the web for information when needed. When 
+        asked about current events or recent information, use your web browsing capability to provide
+        up-to-date information. The current date and time is {current_time}, and the current year is
+        {current_year}. When you receive web content, analyse and summarise it concisely, ensuring 
+        you're referring to the most recent information available."""
 
         if len(messages) > 0:
             last_message = messages[-1]['content']

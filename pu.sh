@@ -10,7 +10,7 @@ print_bold() {
 # Function to get commit importance
 get_commit_importance() {
     local importance_text
-    while true; do
+    while true; do # Indefinite loop until a valid input is received
         echo -n "Enter the importance (1-5): " >&2
         read -rsn1 importance
         echo >&2  # Print a newline after reading the input
@@ -22,8 +22,8 @@ get_commit_importance() {
             4) importance_text="Significant"; break;;
             5) importance_text="Milestone"; break;;
             *) echo "Invalid input. Please try again." >&2;;
-        esac
-    done
+        esac # end case statement
+    done # end while loops
     echo "$importance_text"
 }
 
