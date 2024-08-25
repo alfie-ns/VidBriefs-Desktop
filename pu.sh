@@ -12,12 +12,12 @@ get_commit_importance() {
     echo -n "Enter the importance (1-5): "  # Prompt for input, -n: no newline
     read -rsn1 importance  # Read a single character into 'importance' 
     case $importance in # importance cases
-        1) echo "Trivial";;
-        2) echo "Minor";;
-        3) echo "Moderate";;
-        4) echo "Significant";;
-        5) echo "Milestone";;
-        *) echo "Invalid choice. Using 'Minor' as default."; echo "Minor: Small changes, fixes, or updates";;
+        1) print_bold "Trivial";;
+        2) print_bold "Minor";;
+        3) print_bold "Moderate";;
+        4) print_bold "Significant";;
+        5) print_bold "Milestone";;
+        *) print_bold "Invalid choice. Using 'Minor' as default."; echo "Minor: Small changes, fixes, or updates";;
     esac # end case
 }
 
