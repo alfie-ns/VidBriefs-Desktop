@@ -15,6 +15,8 @@ execute python code, but this is just the start.
 
 [ ] When this all done, begin making a Nexus Android app using Django API. 
 Nexus should be able to do all of the different script's functionalities.
+
+[ ] Make a Nexus vscode development system with app/ api/ and desktop/ folders
 '''
 
 # Dependencies ------------------------------------------------------------------
