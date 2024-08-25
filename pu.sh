@@ -17,10 +17,10 @@ get_commit_importance() { # read user input into importance variable
         4) echo "Significant: Major features or important fixes";;
         5) echo "Critical: Crucial updates or milestone achievements";;
         *) echo "Invalid choice. Using 'Minor' as default."; echo "Minor: Small changes, fixes, or updates";;
-    esac
+    esac # end case
 }
 
-# Main script --------------------------------------------
+# Main script -----------------------------------------------
 git add .
 
 print_bold "\nCommit importance:"
