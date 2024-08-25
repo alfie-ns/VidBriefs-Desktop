@@ -8,7 +8,7 @@ print_bold() {
 }
 
 # Function to get commit importance
-get_commit_importance() { # read user input into importance variable, -p frag to specify that string as a prompt
+get_commit_importance() {
     read -rsn1 "Enter the importance (1-5): " importance 
     case $importance in # importance cases
         1) echo "Trivial";;
@@ -36,3 +36,16 @@ git commit -m "$commit_message"
 git push origin main
 echo -e '\nLocal repo pushed to remote origin\n'
 print_bold "Commit message: $commit_message"
+
+: <<'-rsnl?'
+
+The function reads first character typed immediately; and stores 
+it in 'importance' variable.
+---------------------------------------------------------
+-rsnl means:
+-r: Raw input (disables interpretation of backslash escapes)
+-s: Silent mode (don't echo characters back to the terminal)
+-n: Take in one character before returning/accepting input
+This allows for immediate, single-character input without pressing Enter.
+
+-rsnl?
