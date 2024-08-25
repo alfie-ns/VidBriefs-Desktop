@@ -1,7 +1,7 @@
 '''
 This file will contain the code for the Huberman AI model.
-- [ ] get humberman podcast data
-- [ ] get huberman lab data
+- [X] get humberman podcast data
+- [X] get huberman lab data
 '''
 
 #!/usr/bin/env python
@@ -95,78 +95,14 @@ def chat_with_ai(messages, personality, ai_model):
     else:
         return "Invalid AI model selected."
 
-# Main function
+# Main function ----------------------------------------------------------------
 def main():
-    print(bold(blue("\nWelcome to the Huberman Lab Podcast Analyzer!\n")))
-
-    ai_model = input(bold("Choose your AI model (gpt/claude): ")).strip().lower()
-    while ai_model not in ["gpt", "claude"]:
-        print(red("Invalid choice. Please enter 'gpt' or 'claude'."))
-        ai_model = input(bold("Choose your AI model (gpt/claude): ")).strip().lower()
-
-    personality = input(bold("Customize Assistant Personality (press Enter for default): ")).strip()
-    personality = personality or "Provide detailed scientific analysis with practical applications."
-
-    print(blue("\nFetching Huberman Lab podcast episodes..."))
-    episodes = fetch_podcast_episodes()
-
-    while True:
-        print("\nAvailable episodes:")
-        for i, episode in enumerate(episodes[:10], 1):  # Show only the first 10 episodes
-            print(f"{i}. {episode['title']}")
-        print("11. Search for a specific topic")
-        print("12. Exit")
-
-        choice = input(bold("\nEnter your choice (1-12): "))
-
-        if choice == '12':
-            print("Exiting...")
-            break
-        elif choice == '11':
-            topic = input("Enter the topic you want to search for: ")
-            relevant_episodes = [ep for ep in episodes if topic.lower() in ep['title'].lower()]
-            if relevant_episodes:
-                print("\nRelevant episodes:")
-                for i, episode in enumerate(relevant_episodes, 1):
-                    print(f"{i}. {episode['title']}")
-                ep_choice = int(input("Choose an episode to analyze (number): ")) - 1
-                episode = relevant_episodes[ep_choice]
-            else:
-                print("No relevant episodes found.")
-                continue
-        elif choice.isdigit() and 1 <= int(choice) <= 10:
-            episode = episodes[int(choice) - 1]
-        else:
-            print(red("Invalid choice. Please try again."))
-            continue
-
-        print(blue(f"\nFetching transcript for: {episode['title']}"))
-        transcript = fetch_episode_transcript(episode['link'])
-
-        analysis_prompt = f"Analyze the following Huberman Lab podcast episode:\n\nTitle: {episode['title']}\n\nTranscript: {transcript[:2000]}...\n\nProvide a summary of the key points, main scientific concepts discussed, and practical takeaways for listeners."
-
-        print(blue("\nAnalyzing the episode..."))
-        analysis = chat_with_ai([{"role": "user", "content": analysis_prompt}], personality, ai_model)
-
-        print(bold(green("\nAnalysis:")))
-        print(analysis)
-
-        # Save analysis to a markdown file
-        filename = f"Huberman_Analysis_{episode['title'].replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
-        with open(os.path.join("Markdown", filename), 'w') as f:
-            f.write(f"# Analysis of {episode['title']}\n\n{analysis}")
-        print(green(f"\nAnalysis saved to {filename}"))
-
-        while True:
-            user_question = input(bold("\nAsk a question about this episode (or type 'back' to return to episode selection): "))
-            if user_question.lower() == 'back':
-                break
-
-            question_prompt = f"Based on the Huberman Lab podcast episode '{episode['title']}' and the previous analysis, please answer the following question: {user_question}"
-            answer = chat_with_ai([{"role": "user", "content": question_prompt}], personality, ai_model)
-
-            print(bold(green("\nAnswer:")))
-            print(answer)
+    '''
+    The Script will contain th functionality to give insights directly from Andrew Huberman, where th
+    AI is essentially Andrew Huberman himself. It will get the preview of different transcripts in Lex-Huberman/
+    and then decide on what markdown file to traverse to get the insights; then will teach them to the user. 
+    Furthermore, however, the AI will be slightly trained on how Andrew Huberman talks and the answers he gives.
+    '''
 
 if __name__ == "__main__":
     main()
