@@ -257,7 +257,24 @@ def search_relevant_links(query, num_links=3):
     except Exception as e:
         print(red(f"Error searching for links: {str(e)}"))
         return []
-# [ ] ai navigation functions -------------------------------------------------------
+# [ ] Perodic Web Browsing -----------------------------------------------------
+def monitor_website(url, check_interval_minutes):
+    def job():
+        content = browse_website(url)
+        # Analyze content for changes or specific information
+        analyze_and_report(content)
+
+    schedule.every(check_interval_minutes).minutes.do(job)
+
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
+def analyze_and_report(content):
+    # Use AI to analyze content and generate report
+    analysis = chat_with_ai([{"role": "user", "content": f"Analyze this content for significant changes or important information:\n\n{content}"}], personality, ai_model)
+    # Send report (e.g., via email, Slack, etc.)
+    send_report(analysis)
+# [ ] ai navigation functions --------------------------------------------------
 def ai_navigate_webpage(url, task_description, ai_model, personality):
     # First, get the initial page content
     initial_content = browse_website(url)
