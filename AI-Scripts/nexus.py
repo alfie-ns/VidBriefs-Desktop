@@ -11,16 +11,18 @@ and Huberman Lab podcasts.
 
 TODO:
 - [X] make web-browsing and code analysis work together all the time
-- [ ] Make nexus able to create an account on a login page
+- [ ] Nexus2: Make nexus able to create an account on a login page
+To do this, I need to give nexus the ability to interact with web pages; not just browse them.
+It can also fill out forms, click buttons, and interact with the page in a more dynamic way.
 - [ ] Make nexus able to search for and find a specific item on a shopping site
 - [ ] Make nexus browse the dark web
 - [ ] Make Nexus work for both web-browsing and analysis at the same time
 - [ ] When this is all done, begin making a Nexus Android app using Django API
 - [X] Make a Nexus vscode development system with app/ api/ and desktop/ folders
 - [ ] Make nexus able to monitor specific social media accounts
-- [ ] Intergrate DrFit into Nexus
-- [X] Intergrate YouTubeAnalysis into Nexus
-- [X] Intergrate TED-Talks into Nexus
+- [ ] Insert DrFit into Nexus
+- [X] Insert YouTubeAnalysis into Nexus
+- [X] Insert TED-Talks into Nexus
 - [ ] Improve Nexus' reccoemndation system, for tedtalks first
 '''
 
@@ -269,7 +271,7 @@ def detect_input_type(user_input, ai_model, personality, current_transcript):
     If the input is a general question, fact-checking, or information-seeking query that would benefit from web search, respond with "browse".
     If the input is related to ted talks, respond with "tedtalk".
     If the input is related to anything Andrew Huberman, respond with "huberman".
-    Respond with ONLY "analysis" or "browse" or "tedtalk" or "huberman". If prompt matches none of the above, respond with "general".
+    Respond with ONLY "analysis" or "browse" or "tedtalk" or "huberman". If unsure, respond with "general".
     """
     
     response = chat_with_ai([{"role": "user", "content": prompt}], personality, ai_model, False, False)
