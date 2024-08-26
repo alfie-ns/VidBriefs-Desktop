@@ -11,13 +11,13 @@ and Huberman Lab podcasts.
 
 TODO:
 - [X] make web-browsing and code analysis work together all the time
-- [ ] Needs to accept general prompts where it doesn't do anything particularly functional
+- [X] Needs to accept general prompts where it doesn't do anything particularly functional
 - [ ] Nexus2: Make nexus able to create an account on a login page
 To do this, I need to give nexus the ability to interact with web pages; not just browse them.
 It can also fill out forms, click buttons, and interact with the page in a more dynamic way.
-- [ ] Make nexus able to search for and find a specific item on a shopping site
-- [ ] Make nexus browse the dark web
-- [ ] Make Nexus work for both web-browsing and analysis at the same time
+- [ ] Nexus3: Make nexus able to search for and find a specific item on a shopping site
+- [ ] Nexus4: Make nexus browse the dark web
+- [X] Make Nexus work for both web-browsing and analysis at the same time
 - [ ] When this is all done, begin making a Nexus Android app using Django API
 - [X] Make a Nexus vscode development system with app/ api/ and desktop/ folders
 - [ ] Make nexus able to monitor specific social media accounts
@@ -28,7 +28,7 @@ It can also fill out forms, click buttons, and interact with the page in a more 
 '''
 
 # Dependencies ------------------------------------------------------------------
-import time,sys,re,os,io
+import time,sys,re,os,io,json,random,schedule
 from dotenv import load_dotenv
 from openai import OpenAI
 import anthropic
@@ -43,6 +43,12 @@ from contextlib import redirect_stdout
 from youtube_transcript_api import YouTubeTranscriptApi
 from urllib.parse import urlparse, parse_qs
 from collections import defaultdict
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
+
 
 # Load environment variables
 load_dotenv()
@@ -251,6 +257,84 @@ def search_relevant_links(query, num_links=3):
     except Exception as e:
         print(red(f"Error searching for links: {str(e)}"))
         return []
+# [ ] ai navigation functions -------------------------------------------------------
+def ai_navigate_webpage(url, task_description, ai_model, personality):
+    # First, get the initial page content
+    initial_content = browse_website(url)
+    
+    # Ask the AI to analyze the page and determine actions
+    analysis_prompt = f"""
+    Given this webpage content:
+    {initial_content}
+
+    And this task:
+    {task_description}
+
+    Provide a list of actions to perform on the webpage. Each action should be a JSON object with the following properties:
+    - 'type': either 'input' (for typing into a field) or 'click' (for clicking a button or link)
+    - 'selector': the CSS selector or XPath to identify the element
+    - 'value': (only for 'input' type) the text to type into the field
+
+    Respond with only the JSON array of actions, no additional explanation.
+    """
+    
+    ai_response = chat_with_ai([{"role": "user", "content": analysis_prompt}], personality, ai_model)
+    
+    try:
+        actions = json.loads(ai_response)
+    except json.JSONDecodeError:
+        print(red("Error: AI response couldn't be parsed as JSON. Falling back to basic browsing."))
+        return initial_content
+
+    # Set up the webdriver
+    driver = webdriver.Chrome()  # Make sure to have chromedriver installed and in PATH
+    driver.get(url)
+    
+    try:
+        for action in actions:
+            if action['type'] == 'input':
+                element = WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, action['selector']))
+                )
+                element.send_keys(action['value'])
+            elif action['type'] == 'click':
+                element = WebDriverWait(driver, 10).until(
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, action['selector']))
+                )
+                element.click()
+            
+            # Wait for page to load after each action
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.TAG_NAME, "body"))
+            )
+    
+    except (TimeoutException, NoSuchElementException) as e:
+        print(red(f"Error during web navigation: {str(e)}"))
+    
+    # Get the final page content
+    final_content = driver.page_source
+    driver.quit()
+    
+    # Ask AI to summarize the results
+    summary_prompt = f"""
+    Given the initial webpage content:
+    {initial_content}
+
+    And the final webpage content after performing actions:
+    {final_content}
+
+    Summarize what changes occurred and whether the task '{task_description}' was successfully completed.
+    """
+    
+    summary = chat_with_ai([{"role": "user", "content": summary_prompt}], personality, ai_model)
+    
+    return summary
+def take_screenshot(driver, filename):
+    driver.save_screenshot(filename)
+def human_like_typing(element, text):
+    for char in text:
+        element.send_keys(char)
+        time.sleep(random.uniform(0.1, 0.3))
 # [X] System Functions ---------------------------------------------------------
 def detect_input_type(user_input, ai_model, personality, current_transcript):
     if current_transcript is not None:
