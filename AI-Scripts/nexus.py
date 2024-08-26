@@ -24,7 +24,7 @@ TODO:
 '''
 
 # Dependencies ------------------------------------------------------------------
-import time,sys,re,os
+import time,sys,re,os,io
 from dotenv import load_dotenv
 from openai import OpenAI
 import anthropic
@@ -36,7 +36,6 @@ import threading
 from urllib.parse import urlparse
 from urllib.parse import quote_plus
 from contextlib import redirect_stdout
-import io
 from youtube_transcript_api import YouTubeTranscriptApi
 from urllib.parse import urlparse, parse_qs
 
@@ -255,14 +254,17 @@ def search_relevant_links(query, num_links=3):
         print(red(f"Error searching for links: {str(e)}"))
         return []
 # [ ] detect_input_type function
-def detect_input_type(user_input, ai_model, personality):
+def detect_input_type(user_input, ai_model, personality, current_transcript):
+    if current_transcript is not None: # if a transcript has been loaded
+        return 'youtube_question'
+    
     prompt = f"""
     Analyse the following user input and determine the most appropriate category for processing:
     
     User Input: "{user_input}"
     
     Categories:
-    1. youtube - if it's a YouTube link or query about a YouTube video
+    1. youtube - if it's a YouTube link
     2. tedtalk - if it's anything related to TED-Talks
     3. sight - if it's asking for Sight Repo data analysis
     4. huberman - if it's about a Huberman Lab podcast
@@ -313,7 +315,7 @@ def chat_with_ai(messages, personality, ai_model, allow_web_search=False, allow_
     1. Provide accurate and up-to-date information, utilising web search when enabled.
     2. Maintain the specified personality in your responses.
     3. Be concise for simple queries and elaborate when necessary.
-    4. Use your youtube 
+    4.  
     5. Always consider the current date ({current_time}) when discussing recent events or information.
 
     CAPABILITIES:
@@ -437,11 +439,11 @@ def intelligent_code_analysis(user_input, ai_model, personality):
     analysis = chat_with_ai([{"role": "user", "content": analysis_prompt}], personality, ai_model, False, True)
     return analysis
 
-# [ ] Youtube --------------------------------------------
+# [X] Youtube --------------------------------------------
 def extract_video_id(url):
     """Extract video ID from YouTube URL."""
     if 'youtu.be' in url:
-        print("extract_video_id is used")
+        #print("extract_video_id is used")
         return url.split('/')[-1]
     else:
         return parse_qs(urlparse(url).query).get('v', [None])[0]
@@ -450,7 +452,7 @@ def get_youtube_transcript(video_id):
     try:
         transcript = YouTubeTranscriptApi.get_transcript(video_id)
         #print(f"Transcript: {transcript}")
-        green("Nexus is watching the video...")
+        
         return ' '.join([entry['text'] for entry in transcript])
     except Exception as e:
         return f"Error: {str(e)}"
@@ -609,6 +611,7 @@ def main():
     print("For code analysis, make sure to make it clear that's what you want it to do.\n")
 
     messages = []  # initialise message list
+    current_transcript = None  # initialise current transcript
 
     while True:
         user_input = input(bold("\nYou: ")).strip()
@@ -624,7 +627,7 @@ def main():
             main()
             return
         
-        input_type = detect_input_type(user_input, ai_model, personality)
+        input_type = detect_input_type(user_input, ai_model, personality, current_transcript)
         # call detect_input_type to find out what the user wants to do
 
         # ---------------------------------------------------------------------
@@ -633,14 +636,21 @@ def main():
             video_id = extract_video_id(user_input)
             current_transcript = get_youtube_transcript(video_id)
             print(green("\nYouTube Transcript Loaded. You can now ask questions about this video."))
+            messages.append({"role": "system", "content": f"Succefully loaded YouTube transcript; answer questions based on this video in the next prompt."})
             continue  # Go back to the start of the loop to allow user to ask question
 
-        if current_transcript:
+        if input_type == 'youtube_question':
             # We have a loaded transcript, so this input is a question about the video
-            print(blue("\nAnalysing YouTube video based on your question..."))
             analysis_prompt = f"Based on this YouTube video transcript:\n\n{current_transcript}\n\nAnswer the following question: {user_input}"
+            print(blue("\nNexus is watching the video..."))
             response = chat_with_ai([{"role": "user", "content": analysis_prompt}], personality, ai_model, allow_web_search, allow_analysis)
-            current_transcript = None  # Reset for the next interaction
+            print(bold(green("\nAssistant: ")) + response)
+            messages.append({"role": "assistant", "content": response})
+            if len(response.split()) > 100:
+                file_path = generate_markdown_file(response)
+                print(green(f"\nResponse saved as: {file_path}"))
+            current_transcript = None  # Reset the current transcript
+            continue  # Go back to the start of the loop
         # ---------------------------------------------------------------------
         # [ ] TED Talk
         elif user_input == "tedtalk":
