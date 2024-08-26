@@ -48,7 +48,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from queue import Queue
+from threading import Thread
 
+task_queue = Queue()
 
 # Load environment variables
 load_dotenv()
@@ -352,6 +355,57 @@ def human_like_typing(element, text):
     for char in text:
         element.send_keys(char)
         time.sleep(random.uniform(0.1, 0.3))
+# [ ] Task queuing and execution -----------------------------------------------
+def worker():
+    """Worker function to process tasks from the queue."""
+    while True:
+        task = task_queue.get()
+        if task is None:
+            break
+        try:
+            execute_task(task)
+        except Exception as e:
+            print(f"Error executing task: {e}")
+        finally:
+            task_queue.task_done()
+def start_worker_threads(num_threads):
+    """Start a specified number of worker threads."""
+    threads = []
+    for _ in range(num_threads):
+        t = Thread(target=worker)
+        t.daemon = True  # Set as daemon so they exit when the main program does
+        t.start()
+        threads.append(t)
+    return threads
+def execute_task(task):
+    """Execute a given task based on its type."""
+    task_type = task.get('type')
+    if task_type == 'web_browse':
+        url = task.get('url')
+        print(f"Browsing {url}")
+        # Simulate web browsing
+        time.sleep(random.uniform(1, 5))
+    elif task_type == 'analyze':
+        content = task.get('content')
+        print(f"Analyzing content: {content[:50]}...")
+        # Simulate content analysis
+        time.sleep(random.uniform(2, 8))
+    elif task_type == 'report':
+        report = task.get('report')
+        print(f"Generating report: {report[:50]}...")
+        # Simulate report generation
+        time.sleep(random.uniform(3, 10))
+    else:
+        print(f"Unknown task type: {task_type}")
+def add_task(task):
+    """Add a task to the queue."""
+    task_queue.put(task)
+def stop_workers(threads):
+    """Stop all worker threads."""
+    for _ in threads:
+        task_queue.put(None)
+    for t in threads:
+        t.join()
 # [X] System Functions ---------------------------------------------------------
 def detect_input_type(user_input, ai_model, personality, current_transcript):
     if current_transcript is not None:
