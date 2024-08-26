@@ -450,7 +450,7 @@ def get_youtube_transcript(video_id):
     try:
         transcript = YouTubeTranscriptApi.get_transcript(video_id)
         #print(f"Transcript: {transcript}")
-        green("Transcript loaded successfully.")
+        green("Nexus is watching the video...")
         return ' '.join([entry['text'] for entry in transcript])
     except Exception as e:
         return f"Error: {str(e)}"
