@@ -16,6 +16,10 @@ TODO:s
 - [ ] Make Nexus work for both web-browsing and analysis at the same time
 - [ ] When this is all done, begin making a Nexus Android app using Django API
 - [X] Make a Nexus vscode development system with app/ api/ and desktop/ folders
+- [ ] Make nexus able to monitor specific social media accounts
+- [ ] Intergrate DrFit into Nexus
+- [ ] Intergrate YouTubeAnalysis into Nexus
+- [ ] Intergrate TED-Talks into Nexus
 '''
 
 # Dependencies ------------------------------------------------------------------
