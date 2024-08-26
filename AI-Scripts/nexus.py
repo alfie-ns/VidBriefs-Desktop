@@ -11,6 +11,7 @@ and Huberman Lab podcasts.
 
 TODO:
 - [X] make web-browsing and code analysis work together all the time
+- [ ] Needs to accept general prompts where it doesn't do anything particularly functional
 - [ ] Nexus2: Make nexus able to create an account on a login page
 To do this, I need to give nexus the ability to interact with web pages; not just browse them.
 It can also fill out forms, click buttons, and interact with the page in a more dynamic way.
@@ -254,33 +255,58 @@ def search_relevant_links(query, num_links=3):
 def detect_input_type(user_input, ai_model, personality, current_transcript):
     if current_transcript is not None:
         return 'youtube_question'
-    
+
     # Check for specific input types first
     if 'youtube.com' in user_input or 'youtu.be' in user_input:
         return 'youtube'
     elif user_input.lower().startswith('browse:') or is_valid_url(user_input):
         return 'browse'
-    
-    # For general queries, use AI to determine if it's a code analysis or web search query
+    elif user_input.lower().startswith('tedtalk:'):
+        return 'tedtalk'
+    elif user_input.lower().startswith('huberman:'):
+        return 'huberman'
+
+    # List of common greetings or casual conversation starters
+    general_queries = [
+        'how are you', 'how you doing', 'what\'s up', 'hello', 'hi', 'hey',
+        'good morning', 'good afternoon', 'good evening', 'what\'s new',
+        'how\'s it going', 'how have you been', 'what\'s happening'
+    ]
+
+    # Check if the user input matches any general queries
+    if any(query in user_input.lower() for query in general_queries):
+        return 'general'
+
+    # For other queries, use AI to determine the appropriate category
     prompt = f"""
-    Analyze the following user input and determine if it's more likely to be a code analysis request or a web search query:
-    
+    Analyze the following user input and determine the most appropriate category:
+
     User Input: "{user_input}"
-    
-    If the input is related to programming, algorithms, data structures, or mathematical operations that can be solved with code, respond with "analysis".
-    If the input is a general question, fact-checking, or information-seeking query that would benefit from web search, respond with "browse".
-    If the input is related to ted talks, respond with "tedtalk".
-    If the input is related to anything Andrew Huberman, respond with "huberman".
-    Respond with ONLY "analysis" or "browse" or "tedtalk" or "huberman". If unsure, respond with "general".
+
+    Categories:
+    1. analysis: If the input is related to programming, algorithms, data structures, or mathematical operations that can be solved with code.
+    2. browse: If the input is a general question, fact-checking, or information-seeking query that would benefit from web search.
+    3. tedtalk: If the input is specifically related to TED talks or requesting information about TED talks.
+    4. huberman: If the input is related to anything about Andrew Huberman or his podcasts.
+    5. general: If the input is part of a casual conversation, greeting, or general query.
+
+    Consider the following guidelines:
+    - Use 'analysis' only for queries that clearly involve programming or require mathematical computations.
+    - Use 'browse' for queries that require current information or specific fact-checking.
+    - Use 'tedtalk' for any queries specifically about TED talks.
+    - Use 'huberman' for queries related to Andrew Huberman or his work.
+    - If the query can be answered with general knowledge or doesn't fit the above categories, classify it as 'general'.
+
+    Respond with ONLY "analysis", "browse", "tedtalk", "huberman", or "general".
     """
-    
+
     response = chat_with_ai([{"role": "user", "content": prompt}], personality, ai_model, False, False)
-    
+
     detected_type = response.strip().lower()
-    
-    if detected_type not in ['analysis', 'browse', 'tedtalk', 'huberman', 'youtube']:
-        return 'browse'  # Default to web search if unsure
-    
+
+    if detected_type not in ['analysis', 'browse', 'tedtalk', 'huberman', 'general']:
+        return 'general'  # Default to general if unsure
+
     return detected_type
 def execute_python_code(code):
     """
@@ -692,7 +718,6 @@ def main():
                 file_path = generate_markdown_file(analysis, "Code_Analysis")
                 print(green(f"\nAnalysis saved as: {file_path}"))
             continue
-        
         # ---------------------------------------------------------------------
         # [X] Youtube
         if input_type == 'youtube':
@@ -785,7 +810,7 @@ def main():
         # ---------------------------------------------------------------------
         # [X] General query handling
         if input_type == 'general':
-            print("General query detected.")
+            #print("General query detected.")
             messages.append({"role": "user", "content": user_input})
 
             print(blue("\nThinking..."))
