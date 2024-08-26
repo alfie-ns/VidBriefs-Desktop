@@ -9,7 +9,8 @@ search the web for relevant information, execute python code,
 analyze YouTube transcripts, TED talks, Sight Repo data,
 and Huberman Lab podcasts.
 
-TODO:s
+TODO:
+- [ ] make web-browsing and code analysis work together all the time
 - [ ] Make nexus able to create an account on a login page
 - [ ] Make nexus able to search for and find a specific item on a shopping site
 - [ ] Make nexus browse the dark web
@@ -18,7 +19,7 @@ TODO:s
 - [X] Make a Nexus vscode development system with app/ api/ and desktop/ folders
 - [ ] Make nexus able to monitor specific social media accounts
 - [ ] Intergrate DrFit into Nexus
-- [ ] Intergrate YouTubeAnalysis into Nexus
+- [X] Intergrate YouTubeAnalysis into Nexus
 - [ ] Intergrate TED-Talks into Nexus
 '''
 
@@ -253,33 +254,40 @@ def search_relevant_links(query, num_links=3):
     except Exception as e:
         print(red(f"Error searching for links: {str(e)}"))
         return []
-# YouTube [ ] ---------------------------------------------------------------------
-def search_youtube_videos(query, max_results=100):
-    base_url = "https://www.youtube.com/results"
-    videos = []
+# [ ] detect_input_type function
+def detect_input_type(user_input, ai_model, personality):
+    prompt = f"""
+    Analyse the following user input and determine the most appropriate category for processing:
     
-    for i in range(0, max_results, 20):
-        params = {
-            "search_query": query,
-            "sp": "CAI%253D",
-            "start": i
-        }
-        response = requests.get(base_url, params=params)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        video_links = soup.find_all('a', href=re.compile(r'/watch\?v='))
-        
-        for link in video_links:
-            href = link.get('href')
-            if href.startswith('/watch?v='):
-                full_link = f"https://www.youtube.com{href}"
-                if full_link not in videos:
-                    videos.append(full_link)
-                    
-                    if len(videos) >= max_results:
-                        return videos
+    User Input: "{user_input}"
     
-    return videos
+    Categories:
+    1. youtube - if it's a YouTube link or query about a YouTube video
+    2. tedtalk - if it's anything related to TED-Talks
+    3. sight - if it's asking for Sight Repo data analysis
+    4. huberman - if it's about a Huberman Lab podcast
+    5. url - if it's a valid URL (not YouTube)
+    6. code - if it's asking for code analysis or generation
+    7. general - for any other type of query
+    
+    Respond with ONLY the category name (lowercase, no punctuation).
+    """
+    
+    response = chat_with_ai([{"role": "user", "content": prompt}], personality, ai_model, False, False)
+    
+    # Clean up the response
+    detected_type = response.strip().lower()
+    
+    # Fallback to basic detection if AI response is not in the expected categories
+    if detected_type not in ['youtube', 'tedtalk', 'sight', 'huberman', 'url', 'code', 'general']:
+        if 'youtube.com' in user_input or 'youtu.be' in user_input:
+            return 'youtube'
+        elif is_valid_url(user_input):
+            return 'url'
+        else:
+            return 'general'
+    
+    return detected_type
 # AI System -------------------------------------------------------------------
 def execute_python_code(code):
     """
@@ -313,6 +321,8 @@ def chat_with_ai(messages, personality, ai_model, allow_web_search=False, allow_
       {f"You can access current information up to {current_time}. Always adjust information to be relative to the current year {current_year}." if allow_web_search else "Rely on your existing knowledge base."}
     - YouTube Search: {'' if allow_web_search else 'Not '}Enabled.
       When web search is enabled, you can also search for and reference relevant YouTube videos.
+      You can also get the transcript of the video; this used when the user asks for a videp
+      transcript, even if they provide a direct youtube link.
     - Code Analysis: {'' if allow_analysis else 'Not '}Enabled. 
       {f"You can analyse, interpret, and suggest Python code when appropriate." if allow_analysis else "Avoid in-depth code analysis."}
     - Real-time Updates: When web search is enabled, you can provide up-to-date information on current events and recent developments.
@@ -427,10 +437,11 @@ def intelligent_code_analysis(user_input, ai_model, personality):
     analysis = chat_with_ai([{"role": "user", "content": analysis_prompt}], personality, ai_model, False, True)
     return analysis
 
-# Youtube --------------------------------------------
+# [ ] Youtube --------------------------------------------
 def extract_video_id(url):
     """Extract video ID from YouTube URL."""
     if 'youtu.be' in url:
+        print("extract_video_id is used")
         return url.split('/')[-1]
     else:
         return parse_qs(urlparse(url).query).get('v', [None])[0]
@@ -438,10 +449,38 @@ def get_youtube_transcript(video_id):
     """Get the transcript for a YouTube video."""
     try:
         transcript = YouTubeTranscriptApi.get_transcript(video_id)
+        #print(f"Transcript: {transcript}")
+        green("Transcript loaded successfully.")
         return ' '.join([entry['text'] for entry in transcript])
     except Exception as e:
         return f"Error: {str(e)}"
-# TED Talk  ------------------------------------------
+def search_youtube_videos(query, max_results=100):
+    base_url = "https://www.youtube.com/results"
+    videos = []
+    
+    for i in range(0, max_results, 20):
+        params = {
+            "search_query": query,
+            "sp": "CAI%253D",
+            "start": i
+        }
+        response = requests.get(base_url, params=params)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        video_links = soup.find_all('a', href=re.compile(r'/watch\?v='))
+        
+        for link in video_links:
+            href = link.get('href')
+            if href.startswith('/watch?v='):
+                full_link = f"https://www.youtube.com{href}"
+                if full_link not in videos:
+                    videos.append(full_link)
+                    
+                    if len(videos) >= max_results:
+                        return videos
+    
+    return videos
+# [ ] TED Talk  ------------------------------------------
 def analyse_ted_talk(talk_title):
     """Analyze TED talk content."""
     talk_content = get_ted_talk_content(talk_title)
@@ -454,7 +493,7 @@ def get_ted_talk_content(talk_title):
                 with open(os.path.join(root, file), 'r') as f:
                     return f.read()
     return "Talk content not found."
-# Sight Repo  ----------------------------------------
+# [ ] Sight Repo  ----------------------------------------
 def analyse_sight_repo_data():
     """Analyze Sight Repo data."""
     transcript, metadata, annotation, comment = choose_random_data()
@@ -463,7 +502,7 @@ def analyse_sight_repo_data():
     content += f"Annotation: {read_file_content(os.path.join('annotations', annotation))}\n\n"
     content += f"Comment: {read_file_content(os.path.join('comments', comment))}"
     return content
-# Huberman Lab  ---------------------------------------
+# [ ] Huberman Lab  ---------------------------------------
 def analyse_huberman_podcast(episode_title):
     """Analyze Huberman Lab podcast content."""
     podcast_content = get_huberman_podcast_content(episode_title)
@@ -561,8 +600,8 @@ def main():
     print(f"Intelligent web browsing: {bold('Enabled' if allow_web_search else 'Disabled')}")
     print(f"Code analysis: {bold('Enabled' if allow_analysis else 'Disabled')}")
     print("\nType 'exit' to quit, 'restart' to start over, or enter your query.")
-    print("Available commands:")
-    print("- 'youtube: [URL]' to analyze YouTube video")
+    print("What can Nexus do?:")
+    print("- 'YouTube Analysis: Paste in a YouTube link and ask questions about the video'")
     print("- 'tedtalk: [TITLE]' to analyze TED talk")
     print("- 'sight: analyze' to analyze Sight Repo data")
     print("- 'huberman: [EPISODE]' to analyze Huberman Lab podcast")
@@ -584,27 +623,41 @@ def main():
             print(bold(green("\nRestarting the assistant...")))
             main()
             return
+        
+        input_type = detect_input_type(user_input, ai_model, personality)
+        # call detect_input_type to find out what the user wants to do
 
-        if user_input.lower().startswith("youtube:"):
-            video_url = user_input[8:].strip()
-            transcript = analyze_youtube_transcript(video_url)
-            print(blue("\nAnalyzing YouTube video..."))
-            analysis_prompt = f"Analyze this YouTube video transcript and provide insights:\n\n{transcript}"
+        # ---------------------------------------------------------------------
+        # [X] Youtube
+        if input_type == 'youtube':
+            video_id = extract_video_id(user_input)
+            current_transcript = get_youtube_transcript(video_id)
+            print(green("\nYouTube Transcript Loaded. You can now ask questions about this video."))
+            continue  # Go back to the start of the loop to allow user to ask question
+
+        if current_transcript:
+            # We have a loaded transcript, so this input is a question about the video
+            print(blue("\nAnalysing YouTube video based on your question..."))
+            analysis_prompt = f"Based on this YouTube video transcript:\n\n{current_transcript}\n\nAnswer the following question: {user_input}"
             response = chat_with_ai([{"role": "user", "content": analysis_prompt}], personality, ai_model, allow_web_search, allow_analysis)
-
-        elif user_input.lower().startswith("tedtalk:"):
+            current_transcript = None  # Reset for the next interaction
+        # ---------------------------------------------------------------------
+        # [ ] TED Talk
+        elif user_input == "tedtalk":
             talk_title = user_input[8:].strip()
             talk_content = analyze_ted_talk(talk_title)
             print(blue("\nAnalyzing TED talk..."))
             analysis_prompt = f"Analyze this TED talk and provide insights:\n\n{talk_content}"
             response = chat_with_ai([{"role": "user", "content": analysis_prompt}], personality, ai_model, allow_web_search, allow_analysis)
-
+        # ---------------------------------------------------------------------
+        # [ ] Sight Repo
         elif user_input.lower() == "sight: analyze":
             sight_data = analyze_sight_repo_data()
             print(blue("\nAnalyzing Sight Repo data..."))
             analysis_prompt = f"Analyze this Sight Repo data and provide insights:\n\n{sight_data}"
             response = chat_with_ai([{"role": "user", "content": analysis_prompt}], personality, ai_model, allow_web_search, allow_analysis)
-
+        # ---------------------------------------------------------------------
+        # [ ] Huberman Lab
         elif user_input.lower().startswith("huberman:"):
             episode_title = user_input[9:].strip()
             podcast_content = analyze_huberman_podcast(episode_title)
