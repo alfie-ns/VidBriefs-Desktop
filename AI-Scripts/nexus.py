@@ -288,7 +288,7 @@ def detect_input_type(user_input, ai_model, personality, current_transcript):
     2. browse: If the input is a general question, fact-checking, or information-seeking query that would benefit from web search.
     3. tedtalk: If the input is specifically related to TED talks or requesting information about TED talks.
     4. huberman: If the input is related to anything about Andrew Huberman or his podcasts.
-    5. general: If the input is part of a casual conversation, greeting, or general query.
+    5. general - If the input is part of a casual conversation, greeting, or general query.
 
     Consider the following guidelines:
     - Use 'analysis' only for queries that clearly involve programming or require mathematical computations.
@@ -667,7 +667,7 @@ def generate_markdown_filename(content, title=None):
 # ------------------------------------------------------------------------------
 def main():
     os.system('clear')
-    print(bold(blue("\nEnhanced AI Nexus Assistant with Multiple Functionalities\n")))
+    print(bold(blue("\nEnhanced AI Nexus Assistant\n")))
     
     ai_model = input(bold("Choose your AI model (gpt/claude): ")).strip().lower()
     while ai_model not in ["gpt", "claude"]:
@@ -682,7 +682,7 @@ def main():
     print("\nType 'exit' to quit, 'restart' to start over, or enter your query.")
     print("What can Nexus do?:")
     print("- 'YouTube Analysis: Paste in a YouTube link and ask questions about the video'")
-    print("- 'TedTalk Analysis: Ask Nexus to summarise ted talks'")
+    print("- 'TedTalk Analysis: Ask Nexus about TED Talks'")
     print("- 'Huberman: [EPISODE]' to analyze Huberman Lab podcast")
     print("- 'Browse: [URL]' for direct web browsing")
     print("- Ask any question for web searching or code analysis\n")
@@ -785,6 +785,7 @@ def main():
         # ---------------------------------------------------------------------
         # [X] Web Browsing
         if input_type == 'browse' or input_type == 'url':
+            #print("Web-browsing detected.")
             if user_input.lower().startswith("browse:"):
                 url = user_input[7:].strip()
                 print(blue(f"\nBrowsing the specific URL: {url}"))
