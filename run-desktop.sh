@@ -62,7 +62,7 @@ while true; do
             exit_script
         fi
 
-    elif [[ $input =~ ^[1-6]$ ]]; then
+    elif [[ $input =~ ^[1-7]$ ]]; then
         echo $input # echo the input so the user can see what they've chosen
         case $input in
             1)  

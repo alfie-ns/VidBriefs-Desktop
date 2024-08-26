@@ -10,7 +10,7 @@ analyze YouTube transcripts, TED talks, Sight Repo data,
 and Huberman Lab podcasts.
 
 TODO:
-- [ ] make web-browsing and code analysis work together all the time
+- [X] make web-browsing and code analysis work together all the time
 - [ ] Make nexus able to create an account on a login page
 - [ ] Make nexus able to search for and find a specific item on a shopping site
 - [ ] Make nexus browse the dark web
@@ -20,7 +20,8 @@ TODO:
 - [ ] Make nexus able to monitor specific social media accounts
 - [ ] Intergrate DrFit into Nexus
 - [X] Intergrate YouTubeAnalysis into Nexus
-- [ ] Intergrate TED-Talks into Nexus
+- [X] Intergrate TED-Talks into Nexus
+- [ ] Improve Nexus' reccoemndation system, for tedtalks first
 '''
 
 # Dependencies ------------------------------------------------------------------
@@ -38,6 +39,7 @@ from urllib.parse import quote_plus
 from contextlib import redirect_stdout
 from youtube_transcript_api import YouTubeTranscriptApi
 from urllib.parse import urlparse, parse_qs
+from collections import defaultdict
 
 # Load environment variables
 load_dotenv()
@@ -102,14 +104,12 @@ def search_and_browse(query):
     all_results = search_results + [{"title": f"YouTube: {url}", "url": url} for url in youtube_results]
     
     return all_results, browsed_content.strip()
-
 def is_valid_url(url):
     try:
         result = urlparse(url)
         return all([result.scheme, result.netloc])
     except ValueError:
         return False
-
 def generate_search_terms(query):
     """Generate multiple search terms based on the user's query."""
     # This is a simple implementation. You can make this more sophisticated with NLP techniques.
@@ -122,7 +122,6 @@ def generate_search_terms(query):
         " ".join(base_terms) + " guide"
     ]
     return list(set(additional_terms))  # Remove duplicates
-
 def perform_search(search_url):
     """Perform a search and return the results."""
     headers = {'User-Agent': 'Mosilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
@@ -144,7 +143,6 @@ def perform_search(search_url):
     except Exception as e:
         print(f"Error during search: {str(e)}")
         return []
-
 def browse_website(url):
     """
     Browse a website and extract relevant content.
@@ -188,7 +186,6 @@ def browse_website(url):
         return f"Title: {title}\n\nContent Summary:\n{main_content}"
     except Exception as e:
         return f"Error browsing the website: {str(e)}"
-
 def extract_main_content(soup):
     """
     Extract the main content from a BeautifulSoup object.
@@ -212,7 +209,6 @@ def extract_main_content(soup):
     
     # Join the extracted text
     return "\n\n".join(content)
-
 def summarise_content(content, max_length=1500):
     """
     Summarise the content to a specified maximum length.
@@ -233,7 +229,6 @@ def summarise_content(content, max_length=1500):
         summary += sentence + " "
     
     return summary.strip() + "...\n\n(Content summarised due to length)"
-
 def search_relevant_links(query, num_links=3):
     search_url = f"https://www.google.com/search?q={quote_plus(query)}"  # Encode query for safe inclusion in URL
 
@@ -253,44 +248,38 @@ def search_relevant_links(query, num_links=3):
     except Exception as e:
         print(red(f"Error searching for links: {str(e)}"))
         return []
-# [ ] detect_input_type function
+# [X] System Functions ---------------------------------------------------------
 def detect_input_type(user_input, ai_model, personality, current_transcript):
-    if current_transcript is not None: # if a transcript has been loaded
+    if current_transcript is not None:
         return 'youtube_question'
     
+    # Check for specific input types first
+    if 'youtube.com' in user_input or 'youtu.be' in user_input:
+        return 'youtube'
+    elif user_input.lower().startswith('browse:') or is_valid_url(user_input):
+        return 'browse'
+    
+    # For general queries, use AI to determine if it's a code analysis or web search query
     prompt = f"""
-    Analyse the following user input and determine the most appropriate category for processing:
+    Analyze the following user input and determine if it's more likely to be a code analysis request or a web search query:
     
     User Input: "{user_input}"
     
-    Categories:
-    1. youtube - if it's a YouTube link
-    2. tedtalk - if it's anything related to TED-Talks
-    3. sight - if it's asking for Sight Repo data analysis
-    4. huberman - if it's about a Huberman Lab podcast
-    5. url - if it's a valid URL (not YouTube)
-    6. code - if it's asking for code analysis or generation
-    7. general - for any other type of query
-    
-    Respond with ONLY the category name (lowercase, no punctuation).
+    If the input is related to programming, algorithms, data structures, or mathematical operations that can be solved with code, respond with "analysis".
+    If the input is a general question, fact-checking, or information-seeking query that would benefit from web search, respond with "browse".
+    If the input is related to ted talks, respond with "tedtalk".
+    If the input is related to anything Andrew Huberman, respond with "huberman".
+    Respond with ONLY "analysis" or "browse" or "tedtalk" or "huberman". If prompt matches none of the above, respond with "general".
     """
     
     response = chat_with_ai([{"role": "user", "content": prompt}], personality, ai_model, False, False)
     
-    # Clean up the response
     detected_type = response.strip().lower()
     
-    # Fallback to basic detection if AI response is not in the expected categories
-    if detected_type not in ['youtube', 'tedtalk', 'sight', 'huberman', 'url', 'code', 'general']:
-        if 'youtube.com' in user_input or 'youtu.be' in user_input:
-            return 'youtube'
-        elif is_valid_url(user_input):
-            return 'url'
-        else:
-            return 'general'
+    if detected_type not in ['analysis', 'browse', 'tedtalk', 'huberman', 'youtube']:
+        return 'browse'  # Default to web search if unsure
     
     return detected_type
-# AI System -------------------------------------------------------------------
 def execute_python_code(code):
     """
     Execute Python code and return the output.
@@ -302,7 +291,6 @@ def execute_python_code(code):
         except Exception as e:
             print(f"Error: {str(e)}")
     return buffer.getvalue()
-
 def chat_with_ai(messages, personality, ai_model, allow_web_search=False, allow_analysis=False):
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     current_year = datetime.now().year
@@ -319,16 +307,10 @@ def chat_with_ai(messages, personality, ai_model, allow_web_search=False, allow_
     5. Always consider the current date ({current_time}) when discussing recent events or information.
 
     CAPABILITIES:
-    - Web Search: {'' if allow_web_search else 'Not '}Enabled. 
-      {f"You can access current information up to {current_time}. Always adjust information to be relative to the current year {current_year}." if allow_web_search else "Rely on your existing knowledge base."}
-    - YouTube Search: {'' if allow_web_search else 'Not '}Enabled.
-      When web search is enabled, you can also search for and reference relevant YouTube videos.
-      You can also get the transcript of the video; this used when the user asks for a videp
-      transcript, even if they provide a direct youtube link.
-    - Code Analysis: {'' if allow_analysis else 'Not '}Enabled. 
-      {f"You can analyse, interpret, and suggest Python code when appropriate." if allow_analysis else "Avoid in-depth code analysis."}
-    - Real-time Updates: When web search is enabled, you can provide up-to-date information on current events and recent developments.
-
+    - Web Search: Always enabled. You can access current information up to {current_time}. Always adjust information to be relative to the current year {current_year}.
+    - YouTube Search: Enabled. You can search for and reference relevant YouTube videos.
+    - Code Analysis: Always enabled. You normally run Python code to address math-related queries.
+    - Real-time Updates: You can provide up-to-date information on current events and recent developments.
 
     RESPONSE STRUCTURE:
     1. Address the query directly and concisely.
@@ -403,7 +385,6 @@ def chat_with_ai(messages, personality, ai_model, allow_web_search=False, allow_
             ai_response += "\n\nFurther Reading:\n" + "\n".join(links)
     
     return ai_response
-
 def intelligent_code_analysis(user_input, ai_model, personality):
     code_query = re.sub(r'^(an[ae]ly[sz]e):\s*', '', user_input, flags=re.IGNORECASE).strip()
     
@@ -430,7 +411,7 @@ def intelligent_code_analysis(user_input, ai_model, personality):
     Execution result:
     {execution_result}
 
-    Please provide an analysis of this code and its execution, including:
+    Please provide a brief analysis of this code and its execution, including:
     1. Explanation of how the code addresses the user's query
     2. Breakdown of the code's functionality
     3. Interpretation of the execution result
@@ -438,8 +419,7 @@ def intelligent_code_analysis(user_input, ai_model, personality):
 
     analysis = chat_with_ai([{"role": "user", "content": analysis_prompt}], personality, ai_model, False, True)
     return analysis
-
-# [X] Youtube --------------------------------------------
+# [X] Youtube ------------------------------------------------------------------
 def extract_video_id(url):
     """Extract video ID from YouTube URL."""
     if 'youtu.be' in url:
@@ -482,20 +462,94 @@ def search_youtube_videos(query, max_results=100):
                         return videos
     
     return videos
-# [ ] TED Talk  ------------------------------------------
+# [X] TED Talk  ---------------------------------------------------------------
 def analyse_ted_talk(talk_title):
     """Analyze TED talk content."""
     talk_content = get_ted_talk_content(talk_title)
     return talk_content
+def classify_talk_topics():
+    """Classify TED talks into broad topics based on their titles and content."""
+    all_talks = get_all_talk_titles()
+    topic_keywords = {
+        'psychology': ['psychology', 'mind', 'brain', 'behavior', 'mental', 'cognitive'],
+        'technology': ['technology', 'innovation', 'digital', 'computer', 'ai', 'robot'],
+        'science': ['science', 'research', 'discovery', 'experiment', 'scientific'],
+        'society': ['society', 'culture', 'community', 'social', 'politics', 'education'],
+        'business': ['business', 'entrepreneurship', 'finance', 'economy', 'management'],
+        'arts': ['art', 'music', 'creativity', 'design', 'performance', 'literature'],
+        'health': ['health', 'medical', 'wellness', 'disease', 'treatment', 'body'],
+        'environment': ['environment', 'climate', 'sustainability', 'ecology', 'green'],
+    }
+    
+    talk_topics = defaultdict(list)
+    
+    for talk in all_talks:
+        content = get_ted_talk_content(talk)
+        text = (talk + ' ' + content).lower()
+        
+        for topic, keywords in topic_keywords.items():
+            if any(keyword in text for keyword in keywords):
+                talk_topics[topic].append(talk)
+    
+    return talk_topics
+def recommend_ted_talks(query, num_recommendations=3):
+    """
+    Search for and recommend TED Talks based on the user's query.
+    """
+    all_talks = get_all_talk_titles()
+    relevant_talks = []
+
+    # Preprocess query
+    query_keywords = set(query.lower().split())
+
+    for talk in all_talks:
+        content = get_ted_talk_content(talk)
+        title_keywords = set(talk.lower().replace('_', ' ').split())
+        content_keywords = set(content.lower().split())
+
+        # Calculate relevance score based on keyword matches in title and content
+        title_matches = len(query_keywords.intersection(title_keywords))
+        content_matches = len(query_keywords.intersection(content_keywords))
+
+        # Increase weight for exact phrase matches
+        if query.lower() in talk.lower().replace('_', ' '):
+            title_matches += 10
+        if query.lower() in content.lower():
+            content_matches += 5
+
+        relevance_score = (title_matches * 5) + content_matches  # Weight title matches more heavily
+
+        # Only include talks with a significant relevance score
+        if relevance_score > 2:  # Adjust this threshold as needed
+            relevant_talks.append((talk, relevance_score))
+    
+    # Sort by relevance score and get top recommendations
+    relevant_talks.sort(key=lambda x: x[1], reverse=True)
+    recommendations = relevant_talks[:num_recommendations]
+    
+    # If we don't have enough recommendations, include some random talks
+    if len(recommendations) < num_recommendations:
+        remaining_talks = [talk for talk in all_talks if talk not in [r[0] for r in recommendations]]
+        random_recommendations = random.sample(remaining_talks, min(num_recommendations - len(recommendations), len(remaining_talks)))
+        recommendations.extend([(talk, 0) for talk in random_recommendations])
+    
+    return [talk for talk, score in recommendations]
 def get_ted_talk_content(talk_title):
     """Fetch and return the content of a TED talk given its title."""
     for root, dirs, files in os.walk("config/TED-talks"):
         for file in files:
             if file.endswith(".md") and talk_title in file:
-                with open(os.path.join(root, file), 'r') as f:
+                with open(os.path.join(root, file), 'r', encoding='utf-8') as f:
                     return f.read()
     return "Talk content not found."
-# [ ] Sight Repo  ----------------------------------------
+def get_all_talk_titles():
+    """Get all TED Talk titles from the local directory."""
+    titles = []
+    for root, dirs, files in os.walk("config/TED-talks"):
+        for file in files:
+            if file.endswith(".md"):
+                titles.append(file[:-3])  # Remove .md extension
+    return titles# [ ] Sight Repo  --------------------------------------------------------------
 def analyse_sight_repo_data():
     """Analyze Sight Repo data."""
     transcript, metadata, annotation, comment = choose_random_data()
@@ -504,7 +558,7 @@ def analyse_sight_repo_data():
     content += f"Annotation: {read_file_content(os.path.join('annotations', annotation))}\n\n"
     content += f"Comment: {read_file_content(os.path.join('comments', comment))}"
     return content
-# [ ] Huberman Lab  ---------------------------------------
+# [ ] Huberman Lab  ------------------------------------------------------------
 def analyse_huberman_podcast(episode_title):
     """Analyze Huberman Lab podcast content."""
     podcast_content = get_huberman_podcast_content(episode_title)
@@ -518,7 +572,7 @@ def get_huberman_podcast_content(episode_title):
                 content = file.read()
                 return '\n'.join(content.split('\n')[1:])  # Remove the title
     return "Podcast content not found."
-# Markdown File Generation ----------------------------
+# Markdown File Generation -----------------------------------------------------
 def read_file_content(filepath):
     """Read and return the content of a file."""
     with open(os.path.join("config", "sight-repo", "data", filepath), 'r') as file:
@@ -595,20 +649,15 @@ def main():
     personality = input(bold("Customise Assistant Personality (press Enter for default): ")).strip()
     personality = personality or "BALANCED 🧠 ANALYTICAL-🎨 CREATIVE with MEDIUM 🤝 EMPATHETIC approach"
 
-    allow_web_search = input(bold("Allow intelligent web browsing? (y/n): ")).strip().lower() == 'y'
-    allow_analysis = input(bold("Allow code analysis? (y/n): ")).strip().lower() == 'y'
-
     print(f"\nYour {ai_model.upper()} assistant with personality: {bold(personality)}")
-    print(f"Intelligent web browsing: {bold('Enabled' if allow_web_search else 'Disabled')}")
-    print(f"Code analysis: {bold('Enabled' if allow_analysis else 'Disabled')}")
+    print("Intelligent web browsing and code analysis are now always available.")
     print("\nType 'exit' to quit, 'restart' to start over, or enter your query.")
     print("What can Nexus do?:")
     print("- 'YouTube Analysis: Paste in a YouTube link and ask questions about the video'")
-    print("- 'tedtalk: [TITLE]' to analyze TED talk")
-    print("- 'sight: analyze' to analyze Sight Repo data")
-    print("- 'huberman: [EPISODE]' to analyze Huberman Lab podcast")
-    print("- 'browse: [URL]' for direct web browsing")
-    print("For code analysis, make sure to make it clear that's what you want it to do.\n")
+    print("- 'TedTalk Analysis: Ask Nexus to summarise ted talks'")
+    print("- 'Huberman: [EPISODE]' to analyze Huberman Lab podcast")
+    print("- 'Browse: [URL]' for direct web browsing")
+    print("- Ask any question for web searching or code analysis\n")
 
     messages = []  # initialise message list
     current_transcript = None  # initialise current transcript
@@ -629,21 +678,32 @@ def main():
         
         input_type = detect_input_type(user_input, ai_model, personality, current_transcript)
         # call detect_input_type to find out what the user wants to do
-
+        
+        # ---------------------------------------------------------------------
+        # [X] Analysis
+        if input_type == 'analysis':
+            print(blue("\nPerforming code analysis..."))
+            analysis = intelligent_code_analysis(user_input, ai_model, personality)
+            print(bold(green("\nCode Analysis:")) + analysis)
+            messages.append({"role": "assistant", "content": analysis})
+            if len(analysis.split()) > 100:
+                file_path = generate_markdown_file(analysis, "Code_Analysis")
+                print(green(f"\nAnalysis saved as: {file_path}"))
+            continue
+        
         # ---------------------------------------------------------------------
         # [X] Youtube
         if input_type == 'youtube':
             video_id = extract_video_id(user_input)
             current_transcript = get_youtube_transcript(video_id)
             print(green("\nYouTube Transcript Loaded. You can now ask questions about this video."))
-            messages.append({"role": "system", "content": f"Succefully loaded YouTube transcript; answer questions based on this video in the next prompt."})
+            messages.append({"role": "system", "content": f"Successfully loaded YouTube transcript; answer questions based on this video in the next prompt."})
             continue  # Go back to the start of the loop to allow user to ask question
-
         if input_type == 'youtube_question':
             # We have a loaded transcript, so this input is a question about the video
             analysis_prompt = f"Based on this YouTube video transcript:\n\n{current_transcript}\n\nAnswer the following question: {user_input}"
             print(blue("\nNexus is watching the video..."))
-            response = chat_with_ai([{"role": "user", "content": analysis_prompt}], personality, ai_model, allow_web_search, allow_analysis)
+            response = chat_with_ai([{"role": "user", "content": analysis_prompt}], personality, ai_model)
             print(bold(green("\nAssistant: ")) + response)
             messages.append({"role": "assistant", "content": response})
             if len(response.split()) > 100:
@@ -651,90 +711,90 @@ def main():
                 print(green(f"\nResponse saved as: {file_path}"))
             current_transcript = None  # Reset the current transcript
             continue  # Go back to the start of the loop
+        
         # ---------------------------------------------------------------------
-        # [ ] TED Talk
-        elif user_input == "tedtalk":
-            talk_title = user_input[8:].strip()
-            talk_content = analyze_ted_talk(talk_title)
-            print(blue("\nAnalyzing TED talk..."))
-            analysis_prompt = f"Analyze this TED talk and provide insights:\n\n{talk_content}"
-            response = chat_with_ai([{"role": "user", "content": analysis_prompt}], personality, ai_model, allow_web_search, allow_analysis)
-        # ---------------------------------------------------------------------
-        # [ ] Sight Repo
-        elif user_input.lower() == "sight: analyze":
-            sight_data = analyze_sight_repo_data()
-            print(blue("\nAnalyzing Sight Repo data..."))
-            analysis_prompt = f"Analyze this Sight Repo data and provide insights:\n\n{sight_data}"
-            response = chat_with_ai([{"role": "user", "content": analysis_prompt}], personality, ai_model, allow_web_search, allow_analysis)
+        # [X] TED Talk
+        elif input_type == 'tedtalk':
+            print(blue("\nSearching for relevant TED Talks..."))
+            recommended_talks = recommend_ted_talks(user_input, num_recommendations=3)
+            
+            if recommended_talks:
+                print(green("\nRecommended TED Talks:"))
+                for i, talk in enumerate(recommended_talks, 1):
+                    print(f"{i}. {talk}")
+                
+                talk_choice = input(bold("\nEnter the number of the talk you'd like to analyze, or press Enter to skip: "))
+                if talk_choice.isdigit() and 1 <= int(talk_choice) <= len(recommended_talks):
+                    chosen_talk = recommended_talks[int(talk_choice) - 1]
+                    talk_content = get_ted_talk_content(chosen_talk)
+                    print(blue(f"\nAnalyzing TED talk: {chosen_talk}"))
+                    analysis_prompt = f"Analyze this TED talk and provide insights:\n\n{talk_content}"
+                    response = chat_with_ai([{"role": "user", "content": analysis_prompt}], personality, ai_model)
+                    print(bold(green("\nAssistant: ")) + response)
+                    messages.append({"role": "assistant", "content": response})
+                    
+                    if len(response.split()) > 100:
+                        file_path = generate_markdown_file(response, f"TED_Talk_Analysis_{chosen_talk}")
+                        print(green(f"\nAnalysis saved as: {file_path}"))
+                else:
+                    print("Skipping TED Talk analysis.")
+            else:
+                print(red("No relevant TED Talks found."))
+                print("Searching the web for information on this topic instead.")
+                input_type = 'browse'  # Switch to web browsing if no TED talks found
+            
+            if input_type != 'browse':
+                continue
+        
         # ---------------------------------------------------------------------
         # [ ] Huberman Lab
-        elif user_input.lower().startswith("huberman:"):
+        elif input_type == 'huberman':
             episode_title = user_input[9:].strip()
             podcast_content = analyze_huberman_podcast(episode_title)
             print(blue("\nAnalyzing Huberman Lab podcast..."))
             analysis_prompt = f"Analyze this Huberman Lab podcast episode and provide insights:\n\n{podcast_content}"
-            response = chat_with_ai([{"role": "user", "content": analysis_prompt}], personality, ai_model, allow_web_search, allow_analysis)
+            response = chat_with_ai([{"role": "user", "content": analysis_prompt}], personality, ai_model)
 
-        else:
-            # Existing web browsing and code analysis logic
-            if allow_web_search:
-                if user_input.lower().startswith("browse:"):
-                    url = user_input[7:].strip()
-                    print(blue(f"\nBrowsing the specific URL: {url}"))
-                    _, web_result = search_and_browse(url)
-                else:
-                    print(blue("\nAI is deciding what to search based on your input..."))
-                    search_query = chat_with_ai([{"role": "user", "content": f"Based on this user input: '{user_input}', what should I search for to provide the most relevant information? Respond with only the search query, no explanation."}], personality, ai_model, False, False)
-                    print(blue(f"\nAI-determined search query: {search_query}"))
-                    print(blue("\nSearching and browsing the web for relevant information..."))
-                    search_results, web_result = search_and_browse(search_query)
-                    if search_results:
-                        print(green("\nTop Search Results:"))
-                        for i, result in enumerate(search_results, 1):
-                            print(f"{i}. {result['title']} - {result['url']}")
-                
-                print(green("\nWeb Browsing Result:"))
-                print(summarise_content(web_result))
-                messages.append({
-                    "role": "system", 
-                    "content": f"Web search and browsing results for '{user_input}':\n\n{web_result}\n\nPlease use this information to inform your response."
-                })
+        # ---------------------------------------------------------------------
+        # [X] Web Browsing
+        if input_type == 'browse' or input_type == 'url':
+            if user_input.lower().startswith("browse:"):
+                url = user_input[7:].strip()
+                print(blue(f"\nBrowsing the specific URL: {url}"))
+                _, web_result = search_and_browse(url)
+            else:
+                print(blue("\nAI is deciding what to search based on your input..."))
+                search_query = chat_with_ai([{"role": "user", "content": f"Based on this user input: '{user_input}', what should I search for to provide the most relevant information? Respond with only the search query, no explanation."}], personality, ai_model)
+                print(blue(f"\nAI-determined search query: {search_query}"))
+                print(blue("\nSearching and browsing the web for relevant information..."))
+                search_results, web_result = search_and_browse(search_query)
+                if search_results:
+                    print(green("\nTop Search Results:"))
+                    for i, result in enumerate(search_results, 1):
+                        print(f"{i}. {result['title']} - {result['url']}")
+            
+            print(green("\nWeb Browsing Result:"))
+            print(summarise_content(web_result))
+            messages.append({
+                "role": "system", 
+                "content": f"Web search and browsing results for '{user_input}':\n\n{web_result}\n\nPlease use this information to inform your response."
+            })
 
+        # ---------------------------------------------------------------------
+        # [X] General query handling
+        if input_type == 'general':
+            print("General query detected.")
             messages.append({"role": "user", "content": user_input})
 
             print(blue("\nThinking..."))
-            response = chat_with_ai(messages, personality, ai_model, allow_web_search, allow_analysis)
-            
-            if allow_analysis:
-                analysis_decision_prompt = f"""
-                Given the input: "{user_input}", respond with "Yes" if it meets ANY of these:
-                1. Requests Python code or scripts.
-                2. Involves math operations or calculations.
-                3. Asks for data manipulation or analysis.
-                4. Mentions programming concepts (e.g., function, loop, algorithm).
-                5. Can be solved with code.
+            response = chat_with_ai(messages, personality, ai_model)
 
-                Examples that should return "Yes":
-                - "Write a Python script for prime numbers."
-                - "Sort a list in descending order."
-                - "Calculate the average of 10, 15, 20."
-                - "Create a palindrome function."
-                - "Find duplicates in a list."
+            print(bold(green("\nAssistant: ")) + response)
+            messages.append({"role": "assistant", "content": response})
 
-                Respond ONLY with "Yes" or "No".
-                """
-                analysis_decision = chat_with_ai([{"role": "user", "content": analysis_decision_prompt}], personality, ai_model, False, False).strip().lower()
-
-                if analysis_decision == "yes":
-                    print(blue("\nAnalyzing and executing code..."))
-                    response = intelligent_code_analysis(user_input, ai_model, personality)
-
-        print(bold(green("\nAssistant: ")) + response)
-        messages.append({"role": "assistant", "content": response})
-
-        if len(response.split()) > 100:
-            file_path = generate_markdown_file(response)
-            print(green(f"\nResponse saved as: {file_path}"))
+            if len(response.split()) > 100:
+                file_path = generate_markdown_file(response)
+                print(green(f"\nResponse saved as: {file_path}"))
 
 if __name__ == "__main__":
     main()
