@@ -28,7 +28,7 @@ It can also fill out forms, click buttons, and interact with the page in a more 
 '''
 
 # Dependencies ------------------------------------------------------------------
-import time,sys,re,os,io,json,random,schedule
+import time,sys,re,os,io,json,random,schedule,threading
 from dotenv import load_dotenv
 from openai import OpenAI
 import anthropic
@@ -50,9 +50,70 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from queue import Queue
 from threading import Thread
+from urllib.parse import urljoin
+from urllib.parse import urlparse
+
 
 task_queue = Queue()
+thread_local = threading.local()
 
+# WebBrowser Class -------------------------------------------------------------
+class WebBrowser:
+    def __init__(self, browser_type='chrome'):
+        if browser_type.lower() == 'chrome':
+            self.driver = webdriver.Chrome()
+        elif browser_type.lower() == 'firefox':
+            self.driver = webdriver.Firefox()
+        else:
+            raise ValueError("Unsupported browser type")
+
+    def navigate(self, url):
+        self.driver.get(url)
+
+    def find_element(self, selector, by=By.CSS_SELECTOR, timeout=10):
+        try:
+            return WebDriverWait(self.driver, timeout).until(
+                EC.presence_of_element_located((by, selector))
+            )
+        except TimeoutException:
+            print(f"Element {selector} not found within {timeout} seconds")
+            return None
+
+    def click(self, selector, by=By.CSS_SELECTOR):
+        try:
+            element = self.find_element(selector, by)
+            if element:
+                element.click()
+        except Exception as e:
+            print(f"Error clicking element {selector}: {str(e)}")
+
+    def input_text(self, selector, text, by=By.CSS_SELECTOR):
+        try:
+            element = self.find_element(selector, by)
+            if element:
+                element.clear()
+                element.send_keys(text)
+        except Exception as e:
+            print(f"Error inputting text to element {selector}: {str(e)}")
+
+    def get_text(self, selector, by=By.CSS_SELECTOR):
+        try:
+            element = self.find_element(selector, by)
+            return element.text if element else ""
+        except Exception as e:
+            print(f"Error getting text from element {selector}: {str(e)}")
+            return ""
+
+    def submit_form(self, form_selector, by=By.CSS_SELECTOR):
+        try:
+            form = self.find_element(form_selector, by)
+            if form:
+                form.submit()
+        except Exception as e:
+            print(f"Error submitting form {form_selector}: {str(e)}")
+
+    def close(self):
+        self.driver.quit()
 # Load environment variables
 load_dotenv()
 
@@ -80,48 +141,87 @@ def green(text):
     return format_text(text, "32")
 
 # Enhanced Web browsing functionality ------------------------------------------
-def search_and_browse(query):
-    if is_valid_url(query):
-        return [], browse_website(query)
+def search_and_browse(query, site=None):
+    if site:
+        url = f"https://www.{site}/search?q={quote_plus(query)}"
+        return perform_search(url), browse_website(url)
+    else:
+        if is_valid_url(query):
+            return [], browse_website(query)
+
+        search_terms = generate_search_terms(query)
+
+        threads = []
+        for term in search_terms:
+            thread = threading.Thread(target=perform_search_thread, args=(term,))
+            threads.append(thread)
+            thread.start()
+
+        for thread in threads:
+            thread.join()
+
+        # Collect results from all threads
+        all_search_results = []
+        all_browsed_content = ""
+        all_youtube_results = []
+
+        for thread in threads:
+            if hasattr(thread_local, 'search_results'):
+                all_search_results.extend(thread_local.search_results)
+            if hasattr(thread_local, 'browsed_content'):
+                all_browsed_content += thread_local.browsed_content
+            if hasattr(thread_local, 'youtube_results'):
+                all_youtube_results.extend(thread_local.youtube_results)
+
+        all_results = all_search_results + [{"title": f"YouTube: {url}", "url": url} for url in all_youtube_results]
+
+        return all_results, all_browsed_content.strip()
+def perform_search_thread(term):
+    search_url = f"https://www.google.com/search?q={quote_plus(term)}"
+    results = perform_search(search_url)
     
-    search_terms = generate_search_terms(query)
-    search_results = []
-    browsed_content = ""
-    youtube_results = []
+    if not hasattr(thread_local, 'search_results'):
+        thread_local.search_results = []
+    thread_local.search_results.extend(results)
     
-    # Use threading to perform searches concurrently
-    def perform_search_thread(term):
-        nonlocal search_results, browsed_content, youtube_results
-        search_url = f"https://www.google.com/search?q={quote_plus(term)}"
-        results = perform_search(search_url)
-        search_results.extend(results)
-        
-        if results:
-            browsed_content += browse_website(results[0]["url"]) + "\n\n"
-        
-        # Add YouTube search
-        youtube_videos = search_youtube_videos(term, max_results=5)
-        youtube_results.extend(youtube_videos)
+    if results:
+        if not hasattr(thread_local, 'browsed_content'):
+            thread_local.browsed_content = ""
+        thread_local.browsed_content += browse_website(results[0]["url"]) + "\n\n"
     
-    threads = []
-    for term in search_terms:
-        thread = threading.Thread(target=perform_search_thread, args=(term,))
-        threads.append(thread)
-        thread.start()
-    
-    for thread in threads:
-        thread.join()
-    
-    # Combine all results
-    all_results = search_results + [{"title": f"YouTube: {url}", "url": url} for url in youtube_results]
-    
-    return all_results, browsed_content.strip()
+    youtube_videos = search_youtube_videos(term, max_results=5)
+    if not hasattr(thread_local, 'youtube_results'):
+        thread_local.youtube_results = []
+    thread_local.youtube_results.extend(youtube_videos)
 def is_valid_url(url):
     try:
         result = urlparse(url)
         return all([result.scheme, result.netloc])
     except ValueError:
         return False
+def perform_search(search_url):
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+
+    try:
+        response = requests.get(search_url, headers=headers, timeout=10)
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        results = []
+        for result in soup.select('.s-result-item'):
+            title_elem = result.select_one('h2 a span')
+            link_elem = result.select_one('h2 a')
+            price_elem = result.select_one('.a-price-whole')
+            
+            if title_elem and link_elem:
+                title = title_elem.text.strip()
+                url = 'https://www.amazon.co.uk' + link_elem['href'] if link_elem['href'].startswith('/') else link_elem['href']
+                price = price_elem.text.strip() if price_elem else 'N/A'
+                results.append({"title": title, "url": url, "price": price})
+
+        return results[:5]  # Return top 5 results
+    except Exception as e:
+        print(f"Error during search: {str(e)}")
+        return []
 def generate_search_terms(query):
     """Generate multiple search terms based on the user's query."""
     # This is a simple implementation. You can make this more sophisticated with NLP techniques.
@@ -260,6 +360,99 @@ def search_relevant_links(query, num_links=3):
     except Exception as e:
         print(red(f"Error searching for links: {str(e)}"))
         return []
+def handle_web_interaction(user_input, ai_model, personality):
+    print(blue(f"\nHandling web interaction for: {user_input}"))
+    
+    parts = user_input.lower().split()
+    site = None
+    if 'on' in parts:
+        site_index = parts.index('on') + 1
+        if site_index < len(parts):
+            site = parts[site_index]
+            search_query = ' '.join(parts[:site_index-1] + parts[site_index+1:])
+        else:
+            search_query = user_input
+    else:
+        search_query = user_input
+
+    print(blue(f"\nTask: {search_query}"))
+    print(blue(f"\nSearching on: {site if site else 'General web'}"))
+    
+    search_results, web_result = search_and_browse(search_query, site)
+    
+    print(blue(f"\nFound {len(search_results)} search results"))
+    print(blue(f"Web result length: {len(web_result)}"))
+
+    if search_results:
+        print(green("\nTop Search Results:"))
+        for i, result in enumerate(search_results[:5], 1):
+            print(f"{i}. {result['title']} - {result['url']}")
+
+    analysis_prompt = f"""
+    Based on the following web search results and content:
+
+    Search Results:
+    {' '.join([f"{i}. {result['title']} - {result['url']}" for i, result in enumerate(search_results[:5], 1)])}
+
+    Content:
+    {summarise_content(web_result, max_length=500)}
+
+    Please provide a concise summary addressing the user's request: "{search_query}"
+    Focus on the most relevant information and top-rated products if applicable.
+    List at least 5 specific recommendations with brief descriptions if available.
+    """
+
+    summary = chat_with_ai([{"role": "user", "content": analysis_prompt}], personality, ai_model)
+    
+    print(green("\nSummary:"))
+    print(summary)
+
+    return summary
+def get_ai_actions(page_content, task, ai_model, personality):
+    prompt = f"""
+    Given this webpage content:
+    {page_content}
+
+    And this task:
+    {task}
+
+    Provide a list of actions to perform on the webpage. Each action should be a JSON object with the following properties:
+    - 'type': 'click', 'input', or 'extract'
+    - 'selector': the CSS selector to identify the element
+    - 'value': (for 'input' type) the text to input
+
+    Respond with only the JSON array of actions, no additional explanation.
+    """
+    
+    response = chat_with_ai([{"role": "user", "content": prompt}], personality, ai_model)
+    return json.loads(response)
+def perform_action(browser, action):
+    action_type = action['type']
+    selector = action['selector']
+    
+    if action_type == 'click':
+        browser.click(selector)
+    elif action_type == 'input':
+        browser.input_text(selector, action['value'])
+    elif action_type == 'extract':
+        extracted_text = browser.get_text(selector)
+        print(f"Extracted: {extracted_text}")
+def summarize_interaction(initial_content, final_content, task, ai_model, personality):
+    prompt = f"""
+    Initial webpage content:
+    {initial_content}
+
+    Final webpage content:
+    {final_content}
+
+    Task performed:
+    {task}
+
+    Summarize the changes that occurred and whether the task was successfully completed.
+    """
+    
+    return chat_with_ai([{"role": "user", "content": prompt}], personality, ai_model)
+
 # [ ] Perodic Web Browsing -----------------------------------------------------
 def monitor_website(url, check_interval_minutes):
     def job():
@@ -279,76 +472,42 @@ def analyze_and_report(content):
     send_report(analysis)
 # [ ] ai navigation functions --------------------------------------------------
 def ai_navigate_webpage(url, task_description, ai_model, personality):
-    # First, get the initial page content
-    initial_content = browse_website(url)
-    
-    # Ask the AI to analyze the page and determine actions
-    analysis_prompt = f"""
-    Given this webpage content:
-    {initial_content}
-
-    And this task:
-    {task_description}
-
-    Provide a list of actions to perform on the webpage. Each action should be a JSON object with the following properties:
-    - 'type': either 'input' (for typing into a field) or 'click' (for clicking a button or link)
-    - 'selector': the CSS selector or XPath to identify the element
-    - 'value': (only for 'input' type) the text to type into the field
-
-    Respond with only the JSON array of actions, no additional explanation.
-    """
-    
-    ai_response = chat_with_ai([{"role": "user", "content": analysis_prompt}], personality, ai_model)
-    
+    browser = WebBrowser()
     try:
-        actions = json.loads(ai_response)
-    except json.JSONDecodeError:
-        print(red("Error: AI response couldn't be parsed as JSON. Falling back to basic browsing."))
-        return initial_content
-
-    # Set up the webdriver
-    driver = webdriver.Chrome()  # Make sure to have chromedriver installed and in PATH
-    driver.get(url)
-    
-    try:
+        browser.navigate(url)
+        
+        page_content = browser.driver.page_source
+        
+        analysis_prompt = f"""
+        Given this webpage content:
+        {page_content}
+        
+        And this task:
+        {task_description}
+        
+        Provide a list of actions to perform on the webpage. Each action should be a JSON object with the following properties:
+        - 'type': 'click', 'input', or 'extract'
+        - 'selector': the CSS selector to identify the element
+        - 'value': (for 'input' type) the text to input
+        
+        Respond with only the JSON array of actions, no additional explanation.
+        """
+        
+        actions = json.loads(chat_with_ai([{"role": "user", "content": analysis_prompt}], personality, ai_model))
+        
         for action in actions:
-            if action['type'] == 'input':
-                element = WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, action['selector']))
-                )
-                element.send_keys(action['value'])
-            elif action['type'] == 'click':
-                element = WebDriverWait(driver, 10).until(
-                    EC.element_to_be_clickable((By.CSS_SELECTOR, action['selector']))
-                )
-                element.click()
-            
-            # Wait for page to load after each action
-            WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.TAG_NAME, "body"))
-            )
-    
-    except (TimeoutException, NoSuchElementException) as e:
-        print(red(f"Error during web navigation: {str(e)}"))
-    
-    # Get the final page content
-    final_content = driver.page_source
-    driver.quit()
-    
-    # Ask AI to summarize the results
-    summary_prompt = f"""
-    Given the initial webpage content:
-    {initial_content}
-
-    And the final webpage content after performing actions:
-    {final_content}
-
-    Summarize what changes occurred and whether the task '{task_description}' was successfully completed.
-    """
-    
-    summary = chat_with_ai([{"role": "user", "content": summary_prompt}], personality, ai_model)
-    
-    return summary
+            if action['type'] == 'click':
+                browser.click(action['selector'])
+            elif action['type'] == 'input':
+                browser.input_text(action['selector'], action['value'])
+            elif action['type'] == 'extract':
+                extracted_text = browser.get_text(action['selector'])
+                print(f"Extracted: {extracted_text}")
+        
+        final_content = browser.driver.page_source
+        return summarise_content(final_content)
+    finally:
+        browser.close()
 def take_screenshot(driver, filename):
     driver.save_screenshot(filename)
 def human_like_typing(element, text):
@@ -420,6 +579,8 @@ def detect_input_type(user_input, ai_model, personality, current_transcript, con
         return 'browse'
     elif user_input.lower().startswith('analyse:') or 'code' in user_input or 'python' in user_input or 'analyse' in user_input or 'analyze' in user_input:
         return 'analysis'
+    elif any(keyword in user_input.lower() for keyword in ['what are', 'find', 'search for', 'look up', 'best', 'top']):
+        return 'web_interaction'
 
     # List of common greetings or casual conversation starters
     general_queries = [
@@ -453,7 +614,8 @@ def detect_input_type(user_input, ai_model, personality, current_transcript, con
     2. browse: If the input is a general question, fact-checking, or information-seeking query that would benefit from web search.
     3. tedtalk: If the input is specifically related to TED talks or requesting information about TED talks.
     4. huberman: If the input is related to anything about Andrew Huberman or his podcasts.
-    5. general: If the input is part of a casual conversation, greeting, general query, or a continuation of the previous context.
+    5. Web Interaction: If the input involves interacting with a website, filling out forms, or performing specific actions on a webpage return 'web_interaction'.
+    6. general: If the input is part of a casual conversation, greeting, general query, or a continuation of the previous context.
 
     Consider the following guidelines:
     - Use 'analysis' only for queries that clearly involve programming or require mathematical computations.
@@ -463,7 +625,7 @@ def detect_input_type(user_input, ai_model, personality, current_transcript, con
     - If the query can be answered with general knowledge, is a continuation of the previous context, or doesn't fit the above categories, classify it as 'general'.
     - Consider the previous context when determining if this is a continuation of a conversation.
 
-    Respond with ONLY "analysis", "browse", "tedtalk", "huberman", or "general".
+    Respond with ONLY "analysis", "browse", "tedtalk", "huberman", "web_interaction" or "general".
     """
 
     response = chat_with_ai([{"role": "user", "content": prompt}], personality, ai_model, False, False)
@@ -471,7 +633,7 @@ def detect_input_type(user_input, ai_model, personality, current_transcript, con
     detected_type = response.strip().lower()
     #print(f"Detected Input Type: {detected_type}")
 
-    if detected_type not in ['analysis', 'browse', 'tedtalk', 'huberman', 'general']:
+    if detected_type not in ['analysis', 'browse', 'tedtalk', 'huberman','web_interaction', 'general']:
         return 'general'  # Default to general if unsure
 
     return detected_type
@@ -837,7 +999,21 @@ def generate_markdown_filename(content, title=None):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
     return f"{clean_title}_{timestamp}.md"
+def apply_markdown_styling(text):
+    """
+    Apply markdown-like styling to text.
+    Converts text between double asterisks or colons to bold, removing the markers.
+    """
+    def replace_bold(match):
+        return bold(match.group(1))
 
+    # Replace text between double asterisks, removing the asterisks
+    text = re.sub(r'\*\*([^*]+)\*\*', replace_bold, text)
+
+    # Replace text between colons, removing the colons
+    text = re.sub(r':([^:]+):', replace_bold, text)
+
+    return text
 # ------------------------------------------------------------------------------
 # Main 🟥 ----------------------------------------------------------------------
 # ------------------------------------------------------------------------------
@@ -959,6 +1135,16 @@ def main():
             if input_type != 'browse':
                 continue
         
+        # In the main loop, replace the existing web_interaction handling with:
+        elif input_type == 'web_interaction':
+            print(blue("\nInitiating web search..."))
+            response = handle_web_interaction(user_input, ai_model, personality)
+            print(bold(green("\nWeb Search Results:")))
+            print(apply_markdown_styling(response))
+            messages.append({"role": "assistant", "content": response})
+            if len(response.split()) > 100:
+                file_path = generate_markdown_file(response, "Web_Interaction_Summary")
+                print(green(f"\nSummary saved as: {file_path}"))
         # ---------------------------------------------------------------------
         # [ ] Huberman Lab
         elif input_type == 'huberman':
