@@ -15,6 +15,9 @@ TODO:
 - [ ] Nexus2: Make nexus able to create an account on a login page
 To do this, I need to give nexus the ability to interact with web pages; not just browse them.
 It can also fill out forms, click buttons, and interact with the page in a more dynamic way.
+- [ ] Capabilitie to create files and directories
+- [ ] Capabilitie to create images
+- [ ] Capabilitie to read images
 - [ ] Nexus3: Make nexus able to search for and find a specific item on a shopping site
 - [ ] Nexus4: Make nexus browse the dark web
 - [X] Make Nexus work for both web-browsing and analysis at the same time
