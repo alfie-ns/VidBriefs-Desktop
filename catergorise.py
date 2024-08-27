@@ -15,6 +15,7 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 CATEGORIES = [
     "CompSci", 
     "TedTalks",
+    "CodeAnalysis",
     "Investments",
     "Sleep",
     "AI & Machine Learning",

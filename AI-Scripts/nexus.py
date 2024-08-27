@@ -24,7 +24,7 @@ It can also fill out forms, click buttons, and interact with the page in a more 
 - [ ] Insert DrFit into Nexus
 - [X] Insert YouTubeAnalysis into Nexus
 - [X] Insert TED-Talks into Nexus
-- [ ] Improve Nexus' reccoemndation system, for tedtalks first
+- [ ] Improve Nexus' recommendation system, so it can recommend TED talks, YouTube videos, and other content
 '''
 
 # Dependencies ------------------------------------------------------------------
@@ -416,8 +416,10 @@ def detect_input_type(user_input, ai_model, personality, current_transcript, con
         return 'youtube'
     elif user_input.startswith('tedtalk:') or 'ted talk' in user_input or 'tedtalk' in user_input or 'tedtalks' in user_input or 'ted talks' in user_input:
         return 'tedtalk'
-    elif user_input.lower().startswith('browse:') or is_valid_url(user_input):
+    elif user_input.lower().startswith('browse:') or 'search' in user_input or 'web' in user_input or is_valid_url(user_input):
         return 'browse'
+    elif user_input.lower().startswith('analyse:') or 'code' in user_input or 'python' in user_input or 'analyse' in user_input or 'analyze' in user_input:
+        return 'analysis'
 
     # List of common greetings or casual conversation starters
     general_queries = [
@@ -881,10 +883,10 @@ def main():
         
         # Update conversation context with user input
         conversation_context.append(user_input)
-        print("Adding user input to the conversation context")
+        #print("Adding user input to the conversation context")
         if len(conversation_context) > 5:  # Keep only the last 5 interactions
             conversation_context.pop(0)
-            print("Popping the first element of the conversation context")
+            #print("Popping the first element of the conversation context")
         
         input_type = detect_input_type(user_input, ai_model, personality, current_transcript, conversation_context)
         
