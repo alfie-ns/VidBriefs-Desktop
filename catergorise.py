@@ -14,6 +14,7 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 # Constants
 CATEGORIES = [
     "CompSci", 
+    "TedTalks",
     "Investments",
     "Sleep",
     "AI & Machine Learning",
@@ -41,7 +42,6 @@ CATEGORIES = [
     "Other"
 ]
 MARKDOWN_DIR = "Markdown/"
-CHATBOT_MARKDOWN_DIR = "NexusMarkdown/"
 CATEGORIES_DIR = "Categories/"
 
 def categorise_with_ai(content):

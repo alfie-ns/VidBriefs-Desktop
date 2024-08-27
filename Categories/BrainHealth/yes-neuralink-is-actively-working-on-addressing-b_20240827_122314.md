@@ -1,0 +1,5 @@
+Yes, Neuralink is actively working on addressing brain injuries through their technology. During the recent update, they discussed their product, **Telepathy**, which aims to help individuals with paralysis regain control over computers and devices solely through their thoughts. This technology is designed to assist those who have lost the connection between their brain and body due to injuries. 
+
+Moreover, the long-term goals include significant advancements, such as bridging gaps caused by damaged or severed neurons, potentially restoring movement abilities for individuals with spinal injuries. Their focus is not only on current applications for controlling digital devices but also on research aimed at solving more complex challenges related to brain and spinal cord injuries. 
+
+Neuralink is also exploring solutions for individuals who have experienced brain injuries and has hopes to leverage their technology to assist in these areas in the future.

@@ -407,19 +407,17 @@ def stop_workers(threads):
     for t in threads:
         t.join()
 # [X] System Functions ---------------------------------------------------------
-def detect_input_type(user_input, ai_model, personality, current_transcript):
+def detect_input_type(user_input, ai_model, personality, current_transcript, conversation_context):
     if current_transcript is not None:
         return 'youtube_question'
 
     # Check for specific input types first
     if 'youtube.com' in user_input or 'youtu.be' in user_input:
         return 'youtube'
+    elif user_input.startswith('tedtalk:') or 'ted talk' in user_input or 'tedtalk' in user_input or 'tedtalks' in user_input or 'ted talks' in user_input:
+        return 'tedtalk'
     elif user_input.lower().startswith('browse:') or is_valid_url(user_input):
         return 'browse'
-    elif user_input.lower().startswith('tedtalk:'):
-        return 'tedtalk'
-    elif user_input.lower().startswith('huberman:'):
-        return 'huberman'
 
     # List of common greetings or casual conversation starters
     general_queries = [
@@ -432,25 +430,36 @@ def detect_input_type(user_input, ai_model, personality, current_transcript):
     if any(query in user_input.lower() for query in general_queries):
         return 'general'
 
+    # Check for hypothetical scenarios or conversation continuations
+    hypothetical_phrases = ['what if', 'suppose', 'imagine if', 'how about', 'in that case']
+    if any(phrase in user_input.lower() for phrase in hypothetical_phrases):
+        return 'general'
+
+    # Check for subject consistency with previous context
+    if conversation_context and is_conversation_continuation(user_input, conversation_context[-1]):
+        return 'general'
+
     # For other queries, use AI to determine the appropriate category
     prompt = f"""
     Analyze the following user input and determine the most appropriate category:
 
     User Input: "{user_input}"
+    Previous Context: {conversation_context[-1] if conversation_context else 'None'}
 
     Categories:
     1. analysis: If the input is related to programming, algorithms, data structures, or mathematical operations that can be solved with code.
     2. browse: If the input is a general question, fact-checking, or information-seeking query that would benefit from web search.
     3. tedtalk: If the input is specifically related to TED talks or requesting information about TED talks.
     4. huberman: If the input is related to anything about Andrew Huberman or his podcasts.
-    5. general - If the input is part of a casual conversation, greeting, or general query.
+    5. general: If the input is part of a casual conversation, greeting, general query, or a continuation of the previous context.
 
     Consider the following guidelines:
     - Use 'analysis' only for queries that clearly involve programming or require mathematical computations.
     - Use 'browse' for queries that require current information or specific fact-checking.
     - Use 'tedtalk' for any queries specifically about TED talks.
     - Use 'huberman' for queries related to Andrew Huberman or his work.
-    - If the query can be answered with general knowledge or doesn't fit the above categories, classify it as 'general'.
+    - If the query can be answered with general knowledge, is a continuation of the previous context, or doesn't fit the above categories, classify it as 'general'.
+    - Consider the previous context when determining if this is a continuation of a conversation.
 
     Respond with ONLY "analysis", "browse", "tedtalk", "huberman", or "general".
     """
@@ -458,11 +467,21 @@ def detect_input_type(user_input, ai_model, personality, current_transcript):
     response = chat_with_ai([{"role": "user", "content": prompt}], personality, ai_model, False, False)
 
     detected_type = response.strip().lower()
+    #print(f"Detected Input Type: {detected_type}")
 
     if detected_type not in ['analysis', 'browse', 'tedtalk', 'huberman', 'general']:
         return 'general'  # Default to general if unsure
 
     return detected_type
+def is_conversation_continuation(current_input, previous_input):
+    current_subjects = extract_subjects(current_input)
+    previous_subjects = extract_subjects(previous_input)
+    return bool(set(current_subjects) & set(previous_subjects))
+def extract_subjects(text):
+    # This is a simplified subject extraction. In a real-world scenario,
+    # you might want to use NLP libraries for more accurate subject extraction.
+    words = text.lower().split()
+    return [word for word in words if len(word) > 3 and word.isalpha()]
 def execute_python_code(code):
     """
     Execute Python code and return the output.
@@ -844,6 +863,7 @@ def main():
 
     messages = []  # initialise message list
     current_transcript = None  # initialise current transcript
+    conversation_context = []  # initialise conversation context
 
     while True:
         user_input = input(bold("\nYou: ")).strip()
@@ -859,7 +879,16 @@ def main():
             main()
             return
         
-        input_type = detect_input_type(user_input, ai_model, personality, current_transcript)
+        # Update conversation context with user input
+        conversation_context.append(user_input)
+        print("Adding user input to the conversation context")
+        if len(conversation_context) > 5:  # Keep only the last 5 interactions
+            conversation_context.pop(0)
+            print("Popping the first element of the conversation context")
+        
+        input_type = detect_input_type(user_input, ai_model, personality, current_transcript, conversation_context)
+        
+        
         # call detect_input_type to find out what the user wants to do
         
         # ---------------------------------------------------------------------
@@ -933,8 +962,8 @@ def main():
         elif input_type == 'huberman':
             episode_title = user_input[9:].strip()
             podcast_content = analyze_huberman_podcast(episode_title)
-            print(blue("\nAnalyzing Huberman Lab podcast..."))
-            analysis_prompt = f"Analyze this Huberman Lab podcast episode and provide insights:\n\n{podcast_content}"
+            print(blue("\nAnalysing Huberman Lab podcast..."))
+            analysis_prompt = f"Analyse this Huberman Lab podcast episode and provide insights:\n\n{podcast_content}"
             response = chat_with_ai([{"role": "user", "content": analysis_prompt}], personality, ai_model)
 
         # ---------------------------------------------------------------------
@@ -946,9 +975,9 @@ def main():
                 print(blue(f"\nBrowsing the specific URL: {url}"))
                 _, web_result = search_and_browse(url)
             else:
-                print(blue("\nAI is deciding what to search based on your input..."))
+                print(blue("\nNexus is deciding what to search based on your input..."))
                 search_query = chat_with_ai([{"role": "user", "content": f"Based on this user input: '{user_input}', what should I search for to provide the most relevant information? Respond with only the search query, no explanation."}], personality, ai_model)
-                print(blue(f"\nAI-determined search query: {search_query}"))
+                print(blue(f"\nNexus-determined search query: {search_query}"))
                 print(blue("\nSearching and browsing the web for relevant information..."))
                 search_results, web_result = search_and_browse(search_query)
                 if search_results:
@@ -978,6 +1007,13 @@ def main():
             if len(response.split()) > 100:
                 file_path = generate_markdown_file(response)
                 print(green(f"\nResponse saved as: {file_path}"))
+
+        # ---------------------------------------------------------------------
+        if 'response' in locals():
+            conversation_context.append(response)
+            if len(conversation_context) > 5:
+                conversation_context.pop(0)
+        
 
 if __name__ == "__main__":
     main()
