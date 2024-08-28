@@ -15,6 +15,7 @@ TODO:
 - [ ] Nexus2: Make nexus able to create an account on a login page
 To do this, I need to give nexus the ability to interact with web pages; not just browse them.
 It can also fill out forms, click buttons, and interact with the page in a more dynamic way.
+- [X] Amazon: Make nexus able to search for and find a specific item on Amazon
 - [ ] Capabilitie to create files and directories
 - [ ] Capabilitie to create images
 - [ ] Capabilitie to read images
@@ -142,6 +143,9 @@ def red(text):
 
 def green(text):
     return format_text(text, "32")
+
+def yellow(text):
+    return format_text(text, "33")
 
 # Enhanced Web browsing functionality ------------------------------------------
 def search_and_browse(query, site=None):
@@ -455,7 +459,68 @@ def summarize_interaction(initial_content, final_content, task, ai_model, person
     """
     
     return chat_with_ai([{"role": "user", "content": prompt}], personality, ai_model)
+# [X] Amazon -------------------------------------------------------------------
+def scrape_amazon_products(query, country, num_results=10):
+    if country.lower() == 'uk':
+        url = f"https://www.amazon.co.uk/s?k={query.replace(' ', '+')}"
+    else:
+        url = f"https://www.amazon.com/s?k={query.replace(' ', '+')}"
+    
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.9',
+    }
+    
+    print(yellow(f"DEBUG: URL being accessed: {url}"))
+    
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, headers=headers, timeout=15)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.content, 'html.parser')
+            
+            print(yellow(f"DEBUG: Full page content: {soup.prettify()}"))
+            
+            items = soup.select('div[data-asin]')
+            print(yellow(f"DEBUG: Found {len(items)} items"))
 
+            results = []
+            for item in items[:num_results]:
+                title_elem = item.select_one('h2 a span')
+                url_elem = item.select_one('h2 a')
+                price_elem = item.select_one('.a-price-whole')
+                rating_elem = item.select_one('.a-icon-star-small .a-icon-alt')
+                
+                print(yellow(f"DEBUG: Processing item: {title_elem.text if title_elem else 'No title found'}"))
+                
+                if title_elem and url_elem:
+                    title = title_elem.text.strip()
+                    product_url = 'https://www.amazon.co.uk' + url_elem['href'] if country.lower() == 'uk' else 'https://www.amazon.com' + url_elem['href']
+                    price = price_elem.text.strip() if price_elem else "N/A"
+                    rating = rating_elem.text.strip() if rating_elem else "N/A"
+                    
+                    results.append({
+                        'title': title,
+                        'url': product_url,
+                        'price': price,
+                        'rating': rating
+                    })
+                    print(yellow(f"DEBUG: Added item: {title}"))
+                else:
+                    print(yellow(f"DEBUG: Skipped item due to missing title or URL"))
+
+            print(yellow(f"DEBUG: Returning {len(results)} results"))
+            return results
+        except requests.RequestException as e:
+            print(yellow(f"DEBUG: Attempt {attempt + 1} failed. Error: {str(e)}"))
+            if attempt < max_retries - 1:
+                time.sleep(2)  # Wait for 2 seconds before retrying
+            else:
+                print(red(f"Error scraping Amazon after {max_retries} attempts: {str(e)}"))
+    
+    print(yellow("DEBUG: Returning empty list due to failed attempts"))
+    return []  # Return an empty list if all attempts fail
 # [ ] Perodic Web Browsing -----------------------------------------------------
 def monitor_website(url, check_interval_minutes):
     def job():
@@ -576,6 +641,8 @@ def detect_input_type(user_input, ai_model, personality, current_transcript, con
     # Check for specific input types first
     if 'youtube.com' in user_input or 'youtu.be' in user_input:
         return 'youtube'
+    elif any(keyword in user_input.lower() for keyword in ['amazon', 'Amazon']):
+        return 'amazon'
     elif user_input.startswith('tedtalk:') or 'ted talk' in user_input or 'tedtalk' in user_input or 'tedtalks' in user_input or 'ted talks' in user_input:
         return 'tedtalk'
     elif user_input.lower().startswith('browse:') or 'search' in user_input or 'web' in user_input or is_valid_url(user_input):
@@ -584,6 +651,7 @@ def detect_input_type(user_input, ai_model, personality, current_transcript, con
         return 'analysis'
     elif any(keyword in user_input.lower() for keyword in ['what are', 'find', 'search for', 'look up', 'best', 'top']):
         return 'web_interaction'
+    
 
     # List of common greetings or casual conversation starters
     general_queries = [
@@ -1032,6 +1100,9 @@ def main():
     personality = input(bold("Customise Assistant Personality (press Enter for default): ")).strip()
     personality = personality or "BALANCED 🧠 ANALYTICAL-🎨 CREATIVE with MEDIUM 🤝 EMPATHETIC approach"
 
+    print(bold("\nWhat country are you in? (e.g., 'US', 'UK')"))
+    country = input("Country: ").strip().lower()
+
     print(f"\nYour {ai_model.upper()} assistant with personality: {bold(personality)}")
     print("Intelligent web browsing and code analysis are now always available.")
     print("\nType 'exit' to quit, 'restart' to start over, or enter your query.")
@@ -1138,7 +1209,8 @@ def main():
             if input_type != 'browse':
                 continue
         
-        # In the main loop, replace the existing web_interaction handling with:
+        # ---------------------------------------------------------------------
+        # [X] Web Interaction
         elif input_type == 'web_interaction':
             print(blue("\nInitiating web search..."))
             response = handle_web_interaction(user_input, ai_model, personality)
@@ -1148,6 +1220,45 @@ def main():
             if len(response.split()) > 100:
                 file_path = generate_markdown_file(response, "Web_Interaction_Summary")
                 print(green(f"\nSummary saved as: {file_path}"))
+        # ---------------------------------------------------------------------
+        # [X][ ] Amazon
+        elif input_type == 'amazon':
+            print(blue("\nSearching Amazon for products..."))
+            search_query = user_input  # Use the original user input as the search query
+            print(blue(f"\nSearching Amazon for: {search_query}"))
+            
+            amazon_results = scrape_amazon_products(search_query, country, num_results=10)
+            print(yellow(f"DEBUG: Got {len(amazon_results)} results"))
+            
+            if amazon_results:
+                print(green("\nTop Amazon Search Results:"))
+                prod_info = []
+                for i, result in enumerate(amazon_results, 1):
+                    print(f"{i}. {result['title']} - Price: {result['price']}, Rating: {result['rating']}")
+                    print(f"   URL: {result['url']}")
+                    prod_info.append({
+                        "role": "system", 
+                        "content": f"Product's respective URL: {i}: Title: {result['title']}, URL: {result['url']}"
+                    })
+
+                
+                analysis_prompt = (
+                    f"Analyse these Amazon search results and pass the product's respective URLs along with the product details for the search query '{search_query}':\n\n"
+                    + "\n".join([f"{i+1}. {result['title']} - Price: {result['price']}, Rating: {result['rating']}, URL: {result['url']}" for i, result in enumerate(amazon_results)])
+                )
+                response = chat_with_ai([{"role": "user", "content": f"{analysis_prompt} product info:{prod_info}"}], personality, ai_model)
+                # [ ] NEED THE AI TO ALSO PASS THE URLS OF THE PRODUCTS
+                print(bold(green("\nAssistant: ")) + apply_markdown_styling(response))
+                messages.append({"role": "assistant", "content": response})
+                
+                if len(response.split()) > 100:
+                    file_path = generate_markdown_file(response, "Amazon_Product_Analysis")
+                    print(green(f"\nAnalysis saved as: {file_path}"))
+            else:
+                print(red("No Amazon products found or error occurred during search."))
+                response = chat_with_ai([{"role": "user", "content": f"I couldn't find any Amazon products for '{search_query}'. Can you provide some general information or alternatives?"}], personality, ai_model)
+                print(bold(green("\nAssistant: ")) + apply_markdown_styling(response))
+                messages.append({"role": "assistant", "content": response})
         # ---------------------------------------------------------------------
         # [ ] Huberman Lab
         elif input_type == 'huberman':
