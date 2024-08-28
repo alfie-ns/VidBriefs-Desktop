@@ -1096,7 +1096,7 @@ def main():
             analysis_prompt = f"Based on this YouTube video transcript:\n\n{current_transcript}\n\nAnswer the following question: {user_input}"
             print(blue("\nNexus is watching the video..."))
             response = chat_with_ai([{"role": "user", "content": analysis_prompt}], personality, ai_model)
-            print(bold(green("\nAssistant: ")) + response)
+            print(bold(green("\nAssistant: ")) + apply_markdown_styling(response))
             messages.append({"role": "assistant", "content": response})
             if len(response.split()) > 100:
                 file_path = generate_markdown_file(response)
@@ -1122,7 +1122,7 @@ def main():
                     print(blue(f"\nAnalyzing TED talk: {chosen_talk}"))
                     analysis_prompt = f"Analyze this TED talk and provide insights:\n\n{talk_content}"
                     response = chat_with_ai([{"role": "user", "content": analysis_prompt}], personality, ai_model)
-                    print(bold(green("\nAssistant: ")) + response)
+                    print(bold(green("\nAssistant: ")) + apply_markdown_styling(response))
                     messages.append({"role": "assistant", "content": response})
                     
                     if len(response.split()) > 100:
@@ -1192,7 +1192,7 @@ def main():
             print(blue("\nThinking..."))
             response = chat_with_ai(messages, personality, ai_model)
 
-            print(bold(green("\nAssistant: ")) + response)
+            print(bold(green("\nAssistant: ")) + apply_markdown_styling(response))
             messages.append({"role": "assistant", "content": response})
 
             if len(response.split()) > 100:
