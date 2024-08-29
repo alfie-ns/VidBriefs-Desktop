@@ -1144,7 +1144,7 @@ def main():
         # call detect_input_type to find out what the user wants to do
         
         # ---------------------------------------------------------------------
-        # [X] Analysis
+        # [X][ ][ ] Analysis
         if input_type == 'analysis':
             print(blue("\nPerforming code analysis..."))
             analysis = intelligent_code_analysis(user_input, ai_model, personality)
@@ -1155,7 +1155,7 @@ def main():
                 print(green(f"\nAnalysis saved as: {file_path}"))
             continue
         # ---------------------------------------------------------------------
-        # [X] Youtube
+        # [X][ ][ ] Youtube
         if input_type == 'youtube':
             video_id = extract_video_id(user_input)
             current_transcript = get_youtube_transcript(video_id)
@@ -1176,7 +1176,7 @@ def main():
             continue  # Go back to the start of the loop
         
         # ---------------------------------------------------------------------
-        # [X] TED Talk
+        # [X][ ][ ] TED Talk
         elif input_type == 'tedtalk':
             print(blue("\nSearching for relevant TED Talks..."))
             recommended_talks = recommend_ted_talks(user_input, num_recommendations=3)
@@ -1210,7 +1210,7 @@ def main():
                 continue
         
         # ---------------------------------------------------------------------
-        # [X] Web Interaction
+        # [X][ ][ ] Web Interaction
         elif input_type == 'web_interaction':
             print(blue("\nInitiating web search..."))
             response = handle_web_interaction(user_input, ai_model, personality)
@@ -1221,15 +1221,15 @@ def main():
                 file_path = generate_markdown_file(response, "Web_Interaction_Summary")
                 print(green(f"\nSummary saved as: {file_path}"))
         # ---------------------------------------------------------------------
-        # [X][ ] Amazon
+        # [X][X][ ] Amazon
         elif input_type == 'amazon':
             print(blue("\nSearching Amazon for products..."))
             search_query = user_input  # Use the original user input as the search query
             print(blue(f"\nSearching Amazon for: {search_query}"))
-            
+
             amazon_results = scrape_amazon_products(search_query, country, num_results=10)
             print(yellow(f"DEBUG: Got {len(amazon_results)} results"))
-            
+
             if amazon_results:
                 print(green("\nTop Amazon Search Results:"))
                 prod_info = []
@@ -1238,19 +1238,20 @@ def main():
                     print(f"   URL: {result['url']}")
                     prod_info.append({
                         "role": "system", 
-                        "content": f"Product's respective URL: {i}: Title: {result['title']}, URL: {result['url']}"
+                        "content": f"Product {i}: Title: {result['title']}, Price: {result['price']}, Rating: {result['rating']}, URL: {result['url']}"
                     })
 
-                
                 analysis_prompt = (
-                    f"Analyse these Amazon search results and pass the product's respective URLs along with the product details for the search query '{search_query}':\n\n"
-                    + "\n".join([f"{i+1}. {result['title']} - Price: {result['price']}, Rating: {result['rating']}, URL: {result['url']}" for i, result in enumerate(amazon_results)])
+                    f"Analyze these Amazon search results for the query '{search_query}'. "
+                    "Provide a summary of the top products, including their titles, prices, and ratings. "
+                    "IMPORTANT: For each product mentioned, include its EXACT URL as provided in the search results. "
+                    "Do not modify or reconstruct the URLs in any way. Copy and paste them exactly as given. "
+                    "Format each product as a bullet point with its details and the exact URL on a new line prefixed with 'URL: '."
                 )
-                response = chat_with_ai([{"role": "user", "content": f"{analysis_prompt} product info:{prod_info}"}], personality, ai_model)
-                # [ ] NEED THE AI TO ALSO PASS THE URLS OF THE PRODUCTS
+                response = chat_with_ai([{"role": "user", "content": analysis_prompt}] + prod_info, personality, ai_model)
                 print(bold(green("\nAssistant: ")) + apply_markdown_styling(response))
                 messages.append({"role": "assistant", "content": response})
-                
+
                 if len(response.split()) > 100:
                     file_path = generate_markdown_file(response, "Amazon_Product_Analysis")
                     print(green(f"\nAnalysis saved as: {file_path}"))
@@ -1260,7 +1261,7 @@ def main():
                 print(bold(green("\nAssistant: ")) + apply_markdown_styling(response))
                 messages.append({"role": "assistant", "content": response})
         # ---------------------------------------------------------------------
-        # [ ] Huberman Lab
+        # [ ][ ][ ] Huberman Lab
         elif input_type == 'huberman':
             episode_title = user_input[9:].strip()
             podcast_content = analyze_huberman_podcast(episode_title)
@@ -1269,7 +1270,7 @@ def main():
             response = chat_with_ai([{"role": "user", "content": analysis_prompt}], personality, ai_model)
 
         # ---------------------------------------------------------------------
-        # [X] Web Browsing
+        # [X][ ][ ] Web Browsing
         if input_type == 'browse' or input_type == 'url':
             #print("Web-browsing detected.")
             if user_input.lower().startswith("browse:"):
@@ -1295,7 +1296,7 @@ def main():
             })
 
         # ---------------------------------------------------------------------
-        # [X] General query handling
+        # [X][ ][ ] General query handling
         if input_type == 'general':
             #print("General query detected.")
             messages.append({"role": "user", "content": user_input})
