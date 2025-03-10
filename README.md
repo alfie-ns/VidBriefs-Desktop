@@ -74,6 +74,6 @@ Execute Python scripts using their respective shebang, e.g.:
 
 **Or run the run-desktop.sh script in the home/root directory:**
 
-```
+
 
 
